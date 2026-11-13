@@ -25,13 +25,12 @@ plugin, no new WebView code and no bespoke UI.
 The package is declarative: `plugin.json` is the whole integration, there is no
 executable to build.
 
-* Development: `bun run prepare:dev-plugins` stages this directory into
-  `.dev-plugins/peak.game`, and `bun run start` discovers it from there.
-* Release: copy this directory into the user plugin directory
-  (`~/.local/share/TikTools/plugins/peak.game` on Linux,
-  `%LOCALAPPDATA%/TikTools/plugins/peak.game` on Windows,
-  `~/Library/Application Support/TikTools/plugins/peak.game` on macOS) and
-  restart the host.
+* Development: in the **TikTools checkout**, `bun scripts/task.ts prepare-plugins`
+  stages this directory into TikTools' `.dev-plugins/peak.game`.
+  `bun run start` also prepares and loads it automatically when this repository
+  is a sibling or selected by `TIKTOOLS_PLUGINS_REPO`.
+* Distribution: in TikTools, run `bun scripts/task.ts plugins --plugin peak-game`,
+  then import the archive from TikTools' `dist/plugins/` in the Plugins view.
 
 After the install, enable `peak.game` and its `http.request` capability in the
 Plugins tab.
@@ -128,6 +127,8 @@ Every item, entity and hazard id is taken from the catalog of the running
 game, and every rule is **enabled** when the profile is imported. The gift
 names are editable examples: they are not a statement about which gifts exist
 in your region or what they cost.
+
+From this plugin repository root, with the TikTools CLI on your tool path:
 
 ```bash
 tiktools template profile-import examples/profiles/peak-giftwall.tikprofile.json

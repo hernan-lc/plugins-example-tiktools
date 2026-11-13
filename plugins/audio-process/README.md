@@ -9,10 +9,10 @@ the user; a process boundary is not an OS sandbox. The implementation uses
 `tiktools-plugin-sdk` for framing and protocol plumbing and remains
 `#![forbid(unsafe_code)]`.
 
-Build it outside the application workspace:
+Build it from the plugin repository root:
 
 ```bash
-cargo build --release --manifest-path examples/audio-process-plugin/Cargo.toml
+cargo build --release --locked --manifest-path plugins/audio-process/Cargo.toml
 ```
 
 Install a package containing these two files:
@@ -22,6 +22,13 @@ audio.play.process/
   plugin.json
   tiktools-audio-process-plugin
 ```
+
+The binary is built at `target/release/tiktools-audio-process-plugin` (`.exe`
+on Windows). From the TikTools checkout, run
+`bun scripts/task.ts plugins --plugin audio-process` to build a `.plugin`
+archive in TikTools' `dist/plugins/`, then import it in Plugins. For development,
+`bun run start` in TikTools builds and stages this package automatically when
+this repository is beside it or selected by `TIKTOOLS_PLUGINS_REPO`.
 
 The executable must be beside `plugin.json` and have the entry name declared by
 the manifest. After copying the directory into the user plugin directory,

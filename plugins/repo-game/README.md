@@ -1,8 +1,11 @@
 # R.E.P.O. Game
 
 Declarative integration for the existing REPOapi mod, with no additional server.
-Run `bun run prepare:dev-plugins` for automatic development discovery, or install
-this directory through the existing plugin installer. Enable `repo.game` and its
+In the **TikTools checkout**, run `bun scripts/task.ts prepare-plugins` for
+development staging, or `bun run start` to prepare and load it automatically.
+TikTools finds this repository beside it or through `TIKTOOLS_PLUGINS_REPO`.
+For distribution, run `bun scripts/task.ts plugins --plugin repo-game` in TikTools
+and import the archive from its `dist/plugins/` in the Plugins view. Enable `repo.game` and its
 HTTP capability. Configure the local URL in Connections. To set up the token:
 
 1. Start R.E.P.O. with REPOapi once so BepInEx generates its configuration.
@@ -47,7 +50,8 @@ the server may enforce a smaller limit. Upgrades are physical pickups.
 Despawn accepts an API-spawned enemy **instance** ID, not a catalog enemy ID.
 Clear removes API-spawned enemies. Teleport is not exposed.
 
-Import `../profiles/repo-giftwall.tikprofile.json`. All eight example events are
+Import `examples/profiles/repo-giftwall.tikprofile.json` from this repository's
+root. All eight example events are
 disabled: edit each action, select real content, adjust gift filters and quantity,
 then enable the event. Follow/share use the existing LIVE triggers. Cooldowns are
 10–15 seconds. Automation test runs preview requests without sending gameplay

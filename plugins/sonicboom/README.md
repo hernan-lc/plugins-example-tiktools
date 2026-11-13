@@ -1,4 +1,27 @@
-# SonicBoom plugin: provider selection and voice reload
+# SonicBoom plugin
+
+## Build and development
+
+From this plugin repository root:
+
+```bash
+bun install --frozen-lockfile
+bun run typecheck
+bun run test
+bun run build:sonicboom-ui
+cargo test -p sonicboom-backend --locked
+bun run e2e:sonicboom
+```
+
+The browser suite needs Playwright Chromium. Its host interop cases also use
+`TIKTOOLS_APP_DIR` or a sibling TikTools checkout; they skip when none exists.
+In the **TikTools checkout**, `bun run start` builds the backend and UI into
+`.dev-plugins/sonicboom.server`. Use `bun scripts/task.ts prepare-plugins` to
+prepare without launching, or `bun scripts/task.ts plugins --plugin sonicboom`
+to create an archive in TikTools' `dist/plugins/`. TikTools finds this repository
+beside it or through `TIKTOOLS_PLUGINS_REPO`.
+
+## Provider selection and voice reload
 
 Requires the SonicBoom API in [SonicBoom PR #6](https://github.com/nglmercer/SonicBoom/pull/6).
 The isolated WebView continues to use only `PluginBroker`: no direct HTTP, privileged
@@ -86,22 +109,14 @@ Both implementations are pinned by shared fixtures in
 `shared/tts/fixtures/sanitizer-cases.json`, replayed by
 `shared/tts/sanitizer.test.ts` (TypeScript) and `backend/src/sanitizer.rs`
 (Rust). The catalog token list is a hypothesis pending verification against
-captured LIVE traffic — see [docs/EMOTES.md](../../docs/EMOTES.md).
+captured LIVE traffic. The original design remains in the
+[TikTools emote archive](https://github.com/nglmercer/TikTools-app/blob/remake/docs/internal/archive/docs/EMOTES.md).
 
-## Validation (2026-10-16)
+## Historical validation (2026-10-16, before repository extraction)
 
-```bash
-bun x vue-tsc --noEmit -p plugins/sonicboom/ui/tsconfig.json
-bun x vite build --config plugins/sonicboom/ui/vite.config.ts
-bun scripts/task.ts frontend-lint
-bun test plugins/sonicboom/shared plugins/sonicboom/backend plugins/sonicboom/ui/src
-bun x vue-tsc --noEmit
-bun scripts/task.ts frontend-build
-bun scripts/task.ts e2e test --config plugins/sonicboom/ui/playwright.config.ts --output=/tmp/sonicboom-ui-results
-cargo test -p sonicboom-backend
-cargo test -p tiktools-core option_sources
-bun scripts/task.ts e2e test --output=/tmp/tiktools-e2e-results
-```
+The following results describe the original integration in TikTools, not the
+current checkout. Use the build commands above for current verification;
+the original command record is preserved in the linked validation JSON.
 
 - Plugin unit suite: 37 passed.
 - Plugin UI typecheck/build, plugin lint, app typecheck and host web build: passed.

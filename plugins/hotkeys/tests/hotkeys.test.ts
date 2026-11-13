@@ -1,7 +1,7 @@
 // Unit tests for the ported hotkey core: key state, normalization,
 // chords, bind parsing, queueing, and status. Run with:
 //
-//   bun test examples/hotkey-napi-plugin/
+//   bun test ./plugins/hotkeys/tests
 //
 // `hotkeys.ts` is dependency-free on purpose so these run under stock
 // bun/node with no napi-vm and no native binding.

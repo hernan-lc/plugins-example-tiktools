@@ -5,7 +5,7 @@
 // field must be present or behaviors filtering on it can never pass the
 // test even though live events carry it. Run with:
 //
-//   bun test examples/hotkey-napi-plugin/
+//   bun test ./plugins/hotkeys/tests
 //
 
 import { describe, expect, test } from "bun:test";

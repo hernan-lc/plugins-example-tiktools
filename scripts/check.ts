@@ -8,7 +8,8 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dir, '..');
-const ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+// Same contract as TikTools' is_valid_plugin_id and plugin.schema.json.
+const ID = /^[a-z][a-z0-9._-]{1,127}$/;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const RUNTIMES = new Set(['native', 'process', 'wasm', 'napi-vm', 'declarative']);
 

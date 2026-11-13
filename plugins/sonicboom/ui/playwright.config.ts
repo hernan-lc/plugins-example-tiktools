@@ -10,7 +10,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
  * a fake `window.tiktools` broker installed per test — never to the real
  * host — so the package stays independently testable.
  *
- * Run: `bun scripts/task.ts e2e test --config plugins/sonicboom/ui/playwright.config.ts`
+ * Run from the plugin repository: `bun run e2e:sonicboom`
  */
 export default defineConfig({
   testDir: './tests',

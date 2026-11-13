@@ -12,7 +12,9 @@ since the previous tick. It never sends keystrokes anywhere; it only reports
 what was pressed. This example replaces the retired Rust process plugin;
 unlike it, the guest cannot reach compositor-authorized portal chords,
 raw evdev devices, or session detection, so on Wayland it only observes
-what rdev sees (see `docs/HOTKEYS_LINUX.md`).
+what rdev sees. On Wayland, test a shortcut while TikTools is unfocused before
+depending on global capture; rdev's X11 hook does not observe native Wayland
+clients. The napi-vm guest does not provide the retired portal/evdev backends.
 
 The native listener starts when a binding or sequence actually needs it. On
 X11, the current `rdev-node` native hook cannot restart after it has been
@@ -22,7 +24,7 @@ again, the bind reports the failure; restart the TikTools host to listen again.
 Layout:
 
 ```text
-hotkey-napi-plugin/
+plugins/hotkeys/
   plugin.json          manifest (runtime napi-vm, trust trusted, nativeAddons, nativeLibs)
   native-libs.lock.json  committed content pins for the declared libraries
   tsconfig.json        ahead-of-time tsc build (no runtime transpiler)
@@ -39,24 +41,27 @@ hotkey-napi-plugin/
 Build the guest:
 
 ```bash
-node_modules/.bin/tsc -p examples/hotkey-napi-plugin/tsconfig.json
+bun run build:hotkeys
 ```
 
 Guest unit tests (the pure core is dependency-free, so these run with
 no binding and no host):
 
 ```bash
-bun test examples/hotkey-napi-plugin/
+bun test ./plugins/hotkeys/tests
 ```
 
-Stage the native package from a local rdev-node checkout (preferred
-for local iteration on host builds):
+For normal development, `bun run start` or `bun scripts/task.ts prepare-plugins`
+in the **TikTools checkout** compiles the guest and stages its native package.
+For manual staging, run the following commands in the **TikTools checkout**,
+adjusting the sibling paths if needed. A local rdev-node checkout is preferred
+for local iteration on host builds:
 
 ```bash
 cargo run -p tiktools-plugin-devkit --bin tiktools-plugin-stage-native -- \
   --package rdev-node \
   --source ../rdev-node \
-  --plugin-dir examples/hotkey-napi-plugin \
+  --plugin-dir ../plugins-example-tiktools/plugins/hotkeys \
   --root node_modules/rdev-node
 ```
 
@@ -67,8 +72,8 @@ use):
 ```bash
 cargo run -p tiktools-plugin-devkit --bin tiktools-plugin-stage-native -- \
   --provider all \
-  --manifest examples/hotkey-napi-plugin/plugin.json \
-  --plugin-dir examples/hotkey-napi-plugin \
+  --manifest ../plugins-example-tiktools/plugins/hotkeys/plugin.json \
+  --plugin-dir ../plugins-example-tiktools/plugins/hotkeys \
   --target linux-x64-gnu \
   --overwrite
 ```
@@ -79,14 +84,13 @@ diff: it is the trust moment):
 ```bash
 cargo run -p tiktools-plugin-devkit --bin tiktools-plugin-stage-native -- \
   --provider all \
-  --manifest examples/hotkey-napi-plugin/plugin.json \
+  --manifest ../plugins-example-tiktools/plugins/hotkeys/plugin.json \
   --pin
 ```
 
-After staging, `bun run prepare:dev-plugins` picks the example up into
-`.dev-plugins/hotkeys`, and reloading the Plugins view (or restarting
-TikTools) starts it. No host recompilation or plugin registration is
-required.
+Development preparation writes TikTools' `.dev-plugins/hotkeys`.
+`bun scripts/task.ts plugins --plugin hotkeys` in TikTools builds a distributable
+archive in `dist/plugins/`. No plugin registration is required.
 
 The host accepts only the `events.publish` capability for these events,
 only for the `hotkey.pressed` and `hotkey.status` types declared in this

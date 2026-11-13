@@ -3,7 +3,7 @@
 // Authored in TypeScript and compiled ahead of time with the repository's
 // TypeScript compiler (no runtime transpilation in napi-vm):
 //
-//   node_modules/.bin/tsc -p examples/hotkey-napi-plugin/tsconfig.json
+//   bun run build:hotkeys
 //
 // The host loads `dist/index.js` as an ES module through
 // `napi_vm::RustPluginHost`. TikTools selects the exact host `.node`

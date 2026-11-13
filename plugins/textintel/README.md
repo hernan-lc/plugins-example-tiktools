@@ -163,9 +163,13 @@ here; measure with the bench before raising `timeoutMs`.
 ## Build, test, bench
 
 ```sh
-cargo test --manifest-path examples/textintel-process-plugin/Cargo.toml --locked
+cargo test --manifest-path plugins/textintel/Cargo.toml --locked
 cargo bench -p tiktools-textintel-plugin --bench processor_latency
 ```
 
 Install by packaging `plugin.json` with the `tiktools-textintel` binary as
-the `entry` executable.
+the `entry` executable. Run the tests above from this plugin repository root.
+In the **TikTools checkout**, `bun scripts/task.ts plugins --plugin textintel`
+builds an archive in TikTools' `dist/plugins/` for import in Plugins.
+`bun run start` there also builds and stages it for development when this
+repository is a sibling or selected through `TIKTOOLS_PLUGINS_REPO`.

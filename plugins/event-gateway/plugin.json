@@ -10,7 +10,7 @@
   "license": "MIT",
   "engines": { "tiktools": ">=0.3.3, <5.0.0" },
   "categories": ["integrations", "overlays"],
-  "repository": "https://github.com/nglmercer/TikTools-app",
+  "repository": "https://github.com/nglmercer/plugins-example-tiktools",
   "description": "Expose TikTools domain events to local WebSocket and NDJSON widgets.",
   "longDescription": "Starts a loopback-only event gateway at `127.0.0.1:17452`. The gateway owns browser origin validation, CORS, authentication, WebSocket clients, and the HTTP NDJSON fallback.",
   "icon": "network",
