@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "id": "sonora",
+  "name": "Sonora",
+  "version": "1.0.0",
+  "publisher": "tiktools",
+  "metadata": {
+    "publisher": "tiktools"
+  },
+  "license": "MIT",
+  "engines": { "tiktools": ">=0.3.3, <5.0.0" },
+  "categories": ["music", "integrations"],
+  "repository": "https://github.com/nglmercer/plugins-example-tiktools",
+  "description": "Control a running Sonora music player through its local control socket: search and play, play, pause, next and previous.",
+  "longDescription": "Control a running Sonora music player through the same local control socket its own CLI uses (protocol 2, JSON lines over a Unix socket).\n\n- **Search and play** resolves a song, album, artist or playlist and plays the best match\n- **Play / Pause / Next / Previous** send one playback command each\n- No host capability is required: the plugin talks to Sonora directly, on Linux and macOS\n- Start Sonora before running an action; if the socket is missing the action reports that Sonora is not running",
+  "icon": "music",
+  "tags": ["sonora", "music", "player", "audio"],
+  "runtime": "process",
+  "trust": "trusted",
+  "entry": "tiktools-sonora-plugin",
+  "protocolVersion": 1,
+  "capabilities": ["sonora.control"],
+  "permissions": [],
+  "settings": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "socketPath": {
+          "type": "string",
+          "title": "Socket path",
+          "description": "Optional full path to Sonora's control socket. Leave empty to use $XDG_RUNTIME_DIR/sonora.sock with a cache fallback.",
+          "default": ""
+        }
+      }
+    },
+    "uiHints": {
+      "fields": {
+        "socketPath": {
+          "placeholder": "/run/user/1000/sonora.sock"
+        }
+      }
+    }
+  },
+  "actionTypes": [
+    {
+      "id": "sonora.search-play",
+      "version": 1,
+      "title": { "default": "Sonora: Search and play" },
+      "description": { "default": "Search Sonora and play the best matching song, album, artist or playlist." },
+      "tag": "sonora",
+      "icon": "music",
+      "category": "Sonora",
+      "requiredCapabilities": ["sonora.control"],
+      "fields": [
+        {
+          "key": "text",
+          "label": { "default": "Search text" },
+          "kind": "text",
+          "value": "",
+          "template": true,
+          "placeholder": "Daft Punk",
+          "hint": { "default": "What to look for in Sonora. Event placeholders such as {{ event.data.comment }} are supported." }
+        },
+        {
+          "key": "kind",
+          "label": { "default": "Search in" },
+          "kind": "select",
+          "value": "song",
+          "options": [
+            { "value": "song", "label": { "default": "Song" } },
+            { "value": "album", "label": { "default": "Album" } },
+            { "value": "artist", "label": { "default": "Artist" } },
+            { "value": "playlist", "label": { "default": "Playlist" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sonora.play",
+      "version": 1,
+      "title": { "default": "Sonora: Play" },
+      "description": { "default": "Resume playback in Sonora." },
+      "tag": "sonora",
+      "icon": "play",
+      "category": "Sonora",
+      "requiredCapabilities": ["sonora.control"],
+      "fields": []
+    },
+    {
+      "id": "sonora.pause",
+      "version": 1,
+      "title": { "default": "Sonora: Pause" },
+      "description": { "default": "Pause playback in Sonora." },
+      "tag": "sonora",
+      "icon": "pause",
+      "category": "Sonora",
+      "requiredCapabilities": ["sonora.control"],
+      "fields": []
+    },
+    {
+      "id": "sonora.next",
+      "version": 1,
+      "title": { "default": "Sonora: Next track" },
+      "description": { "default": "Skip to the next track in Sonora." },
+      "tag": "sonora",
+      "icon": "skip-forward",
+      "category": "Sonora",
+      "requiredCapabilities": ["sonora.control"],
+      "fields": []
+    },
+    {
+      "id": "sonora.previous",
+      "version": 1,
+      "title": { "default": "Sonora: Previous track" },
+      "description": { "default": "Return to the previous track in Sonora." },
+      "tag": "sonora",
+      "icon": "skip-back",
+      "category": "Sonora",
+      "requiredCapabilities": ["sonora.control"],
+      "fields": []
+    }
+  ]
+}

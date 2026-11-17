@@ -5,6 +5,7 @@
 members = [
     "plugins/audio-process",
     "plugins/event-gateway",
+    "plugins/sonora",
     "plugins/sonicboom/backend",
     "plugins/textintel",
 ]

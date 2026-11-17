@@ -1,0 +1,9 @@
+[package]
+name = "tiktools-sonora-plugin"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+serde_json.workspace = true
+tiktools-plugin-sdk.workspace = true

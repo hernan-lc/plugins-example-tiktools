@@ -13,6 +13,7 @@ ships without any of them, and installs them like any other plugin (registry,
 | `plugins/event-gateway` | `tiktools.event-gateway` | process | Loopback HTTP/WebSocket gateway; serves the TikTools OBS widgets |
 | `plugins/textintel` | `textintel` | process | Pre-filter event processor (local text intelligence) |
 | `plugins/hotkeys` | `hotkeys` | napi-vm | Global hotkeys through the `rdev-node` native addon |
+| `plugins/sonora` | `sonora` | process | Sonora music player: search and play, play, pause, next, previous |
 | `plugins/minecraft-server` | `minecraft.server` | declarative | Minecraft server actions |
 | `plugins/peak-game` | `peak.game` | declarative | PEAK game integration |
 | `plugins/repo-game` | `repo.game` | declarative | R.E.P.O. game integration |

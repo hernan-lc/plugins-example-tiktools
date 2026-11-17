@@ -1321,6 +1321,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "tiktools-sonora-plugin"
+version = "1.0.0"
+dependencies = [
+ "serde_json",
+ "tiktools-plugin-sdk",
+]
+
+[[package]]
 name = "tiktools-textintel-plugin"
 version = "0.1.0"
 dependencies = [
