@@ -53,7 +53,12 @@ struct SonoraPlugin;
 impl Plugin for SonoraPlugin {
     fn action(&mut self, context: &PluginContext, call: ActionCall) -> PluginResult<ActionResult> {
         let action_type = call.action_type().unwrap_or_default();
-        let request = request_for(action_type, call.config())?;
+        // Process plugins receive the raw config alongside the event: the host
+        // only renders templated fields for its own actions, so the field
+        // declared `template: true` in plugin.json has to be resolved here.
+        let mut config = Value::Object(call.config().clone());
+        render_templates(&mut config, &call.event);
+        let request = request_for(action_type, config.as_object().expect("config object"))?;
         let socket = resolve_socket_path(context)?;
         let value = call_sonora(&request, &socket)?;
 
@@ -128,6 +133,92 @@ fn required_choice(
         )));
     }
     Ok(value.to_owned())
+}
+
+/// Maximum length of a rendered template, matching the host's own template
+/// budget closely enough while staying far below the action timeout.
+const MAX_RENDERED_BYTES: usize = 8 * 1024;
+
+/// Renders `{{ event.* }}` placeholders in every config string. Fields without
+/// placeholders are untouched, so static values (the `kind` select, socket
+/// paths) keep their exact text. Unknown paths render as empty strings, like
+/// the host renderer.
+fn render_templates(value: &mut Value, event: &Value) {
+    match value {
+        Value::String(text) => {
+            if text.contains("{{") {
+                *text = render_string(text, event);
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                render_templates(item, event);
+            }
+        }
+        Value::Object(map) => {
+            for item in map.values_mut() {
+                render_templates(item, event);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn render_string(source: &str, event: &Value) -> String {
+    let mut output = String::with_capacity(source.len());
+    let mut rest = source;
+    while let Some(start) = rest.find("{{") {
+        push_bounded(&mut output, &rest[..start]);
+        let expression = &rest[start + 2..];
+        let Some(end) = expression.find("}}") else {
+            // Unclosed placeholder: keep the remainder literal, once.
+            push_bounded(&mut output, &rest[start..]);
+            return output;
+        };
+        let path = expression[..end].trim();
+        if let Some(value) = read_event_path(event, path) {
+            match value {
+                Value::Null => {}
+                Value::String(text) => push_bounded(&mut output, text),
+                other => push_bounded(&mut output, &other.to_string()),
+            }
+        }
+        rest = &expression[end + 2..];
+    }
+    push_bounded(&mut output, rest);
+    output
+}
+
+fn push_bounded(output: &mut String, text: &str) {
+    let remaining = MAX_RENDERED_BYTES.saturating_sub(output.len());
+    if remaining == 0 {
+        return;
+    }
+    if text.len() <= remaining {
+        output.push_str(text);
+        return;
+    }
+    let mut end = remaining.min(text.len());
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    output.push_str(&text[..end]);
+}
+
+/// Reads an `event.*` path from the automation envelope; a leading `event`
+/// segment is optional, mirroring the host's filter/template path language.
+fn read_event_path<'a>(event: &'a Value, path: &str) -> Option<&'a Value> {
+    let path = path.trim();
+    let path = path.strip_prefix("event.").unwrap_or(path);
+    let path = path.strip_prefix("event").unwrap_or(path);
+    let mut current = event;
+    for part in path.trim_matches('.').split('.') {
+        if part.is_empty() {
+            continue;
+        }
+        current = current.get(part)?;
+    }
+    Some(current)
 }
 
 /// Resolve the socket in order: the TikTools plugin setting, an environment
@@ -368,6 +459,47 @@ mod tests {
             body,
             json!({"queue": {"play": [{"search": {"text": "daft punk", "kind": "song"}}]}})
         );
+    }
+
+    #[test]
+    fn search_play_renders_event_placeholders_before_building_the_request() {
+        let mut config = Value::Object(config(&[
+            ("text", "{{ event.data.comment }} "),
+            ("kind", "song"),
+        ]));
+        let event = json!({
+            "id": "sample-event",
+            "type": "tiktok.chat",
+            "data": {"comment": "!play vaundy", "method": "WebcastChatMessage"},
+            "user": {"uniqueId": "usuario_demo"}
+        });
+        render_templates(&mut config, &event);
+        assert_eq!(
+            request_for("sonora.search-play", config.as_object().unwrap()).unwrap(),
+            json!({"queue": {"play": [{"search": {"text": "!play vaundy", "kind": "song"}}]}})
+        );
+    }
+
+    #[test]
+    fn templates_resolve_identity_paths_and_render_unknown_paths_empty() {
+        let event = json!({
+            "type": "tiktok.chat",
+            "data": {"comment": "hola"},
+            "user": {"uniqueId": "luna_dev"}
+        });
+        let mut config = json!({
+            "message": "{{event.user.uniqueId}}: {{ event.data.comment }} / {{ event.data.missing }} ({{ event.type }})"
+        });
+        render_templates(&mut config, &event);
+        assert_eq!(config["message"], "luna_dev: hola /  (tiktok.chat)");
+    }
+
+    #[test]
+    fn templates_leave_unclosed_placeholders_literal() {
+        let event = json!({"data": {"comment": "hola"}});
+        let mut config = json!({"text": "{{ event.data.comment }} plus {{ broken"});
+        render_templates(&mut config, &event);
+        assert_eq!(config["text"], "hola plus {{ broken");
     }
 
     #[test]
