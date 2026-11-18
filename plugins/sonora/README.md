@@ -9,7 +9,7 @@ changes and no additional TikTools capability are required.
 
 | Action id | Action | Arguments | Sonora request |
 | --- | --- | --- | --- |
-| `sonora.search-play` | Sonora: Search and play | `text`, `kind` (`song` / `album` / `artist` / `playlist`) | `{"queue":{"play":[{"search":{...}}]}}` |
+| `sonora.search-play` | Sonora: Search and play | `text`, `stripPrefix` (optional), `kind` (`song` / `album` / `artist` / `playlist`) | `{"queue":{"play":[{"search":{...}}]}}` |
 | `sonora.play` | Sonora: Play | — | `{"playback":"play"}` |
 | `sonora.pause` | Sonora: Pause | — | `{"playback":"pause"}` |
 | `sonora.next` | Sonora: Next track | — | `{"playback":"next"}` |
@@ -17,6 +17,13 @@ changes and no additional TikTools capability are required.
 
 `text` supports TikTools event placeholders, so a song request can be driven
 directly by a chat comment, e.g. `{{ event.data.comment }}`.
+
+When `text` comes from a chat command, the plugin removes the leading command
+token before searching: `!play vaundy`, `!randomkey Daft Punk`, `!sonora Beethoven`
+and `!number 42` all search for the text after the command, not for the command
+itself (otherwise a track literally named `!play` could be played). Set the
+optional `stripPrefix` field to override this — any string is accepted, e.g.
+`play`, `!p` or `song:` — and only that exact prefix will be removed.
 
 Only these five actions are shipped. The wider WebDeck reference integration
 also exposes queue/lyrics/provider reads, seek, volume, mute, shuffle, repeat,

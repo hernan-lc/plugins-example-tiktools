@@ -62,6 +62,14 @@
           "hint": { "default": "What to look for in Sonora. Event placeholders such as {{ event.data.comment }} are supported." }
         },
         {
+          "key": "stripPrefix",
+          "label": { "default": "Strip command prefix" },
+          "kind": "text",
+          "value": "",
+          "placeholder": "!play",
+          "hint": { "default": "Removed from the rendered search text, so a comment like `!play Daft Punk` searches for `Daft Punk` instead of the command." }
+        },
+        {
           "key": "kind",
           "label": { "default": "Search in" },
           "kind": "select",

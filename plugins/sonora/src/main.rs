@@ -58,6 +58,7 @@ impl Plugin for SonoraPlugin {
         // declared `template: true` in plugin.json has to be resolved here.
         let mut config = Value::Object(call.config().clone());
         render_templates(&mut config, &call.event);
+        strip_command_prefix(config.as_object_mut().expect("config object"));
         let request = request_for(action_type, config.as_object().expect("config object"))?;
         let socket = resolve_socket_path(context)?;
         let value = call_sonora(&request, &socket)?;
@@ -219,6 +220,61 @@ fn read_event_path<'a>(event: &'a Value, path: &str) -> Option<&'a Value> {
         current = current.get(part)?;
     }
     Some(current)
+}
+
+/// Removes the chat command from a rendered search text. Automations match a
+/// comment with `starts with !play` — or any other `!key` — so searching the
+/// literal comment would ask Sonora for the command itself and could play a
+/// track named after it. An explicit `stripPrefix` wins; otherwise any
+/// leading `!<word>` token is removed, so `!randomkey`, `!sonora` and `!number`
+/// all work without extra configuration.
+fn strip_command_prefix(config: &mut Map<String, Value>) {
+    let prefix = config
+        .get("stripPrefix")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_owned();
+    let Some(Value::String(text)) = config.get_mut("text") else {
+        return;
+    };
+    let trimmed = text.trim();
+    *text = if prefix.is_empty() {
+        strip_bang_token(trimmed)
+    } else {
+        strip_exact_prefix(trimmed, &prefix)
+    }
+    .to_owned();
+}
+
+/// Drops a leading `!` plus an ASCII word (`!play`, `!sonora`, `!randomkey`).
+fn strip_bang_token(text: &str) -> &str {
+    let Some(rest) = text.strip_prefix('!') else {
+        return text;
+    };
+    let word_len = rest
+        .bytes()
+        .take_while(|byte| byte.is_ascii_alphanumeric() || *byte == b'_' || *byte == b'-')
+        .count();
+    if word_len == 0 || word_len == rest.len() {
+        return text;
+    }
+    rest[word_len..].trim_start()
+}
+
+/// Case-insensitive prefix removal that respects UTF-8 character boundaries.
+fn strip_exact_prefix<'a>(text: &'a str, prefix: &str) -> &'a str {
+    let mut end = 0usize;
+    for (wanted, actual) in prefix.chars().zip(text.chars()) {
+        if wanted.to_ascii_lowercase() != actual.to_ascii_lowercase() {
+            return text;
+        }
+        end += actual.len_utf8();
+    }
+    if prefix.chars().count() > text.chars().count() {
+        return text;
+    }
+    text.get(end..).unwrap_or(text).trim_start()
 }
 
 /// Resolve the socket in order: the TikTools plugin setting, an environment
@@ -474,10 +530,46 @@ mod tests {
             "user": {"uniqueId": "usuario_demo"}
         });
         render_templates(&mut config, &event);
+        strip_command_prefix(config.as_object_mut().unwrap());
         assert_eq!(
             request_for("sonora.search-play", config.as_object().unwrap()).unwrap(),
-            json!({"queue": {"play": [{"search": {"text": "!play vaundy", "kind": "song"}}]}})
+            json!({"queue": {"play": [{"search": {"text": "vaundy", "kind": "song"}}]}})
         );
+    }
+
+    #[test]
+    fn strips_any_bang_command_not_only_play() {
+        for (comment, expected) in [
+            ("!randomkey Daft Punk", "Daft Punk"),
+            ("!sonora   Beethoven", "Beethoven"),
+            ("!number 42", "42"),
+            ("!play vaundy", "vaundy"),
+            ("Daft Punk", "Daft Punk"),
+        ] {
+            let mut config = config(&[("text", comment), ("kind", "song")]);
+            strip_command_prefix(&mut config);
+            assert_eq!(config["text"], expected, "comment: {comment}");
+        }
+    }
+
+    #[test]
+    fn explicit_strip_prefix_overrides_the_bang_default() {
+        let mut play_config = config(&[
+            ("text", "PLAY Daft Punk"),
+            ("stripPrefix", "play"),
+            ("kind", "song"),
+        ]);
+        strip_command_prefix(&mut play_config);
+        assert_eq!(play_config["text"], "Daft Punk");
+
+        // A prefix that is not present leaves the text alone.
+        let mut other_config = config(&[
+            ("text", "!play vaundy"),
+            ("stripPrefix", "sonora"),
+            ("kind", "song"),
+        ]);
+        strip_command_prefix(&mut other_config);
+        assert_eq!(other_config["text"], "!play vaundy");
     }
 
     #[test]
