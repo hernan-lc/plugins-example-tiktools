@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "tiktools.remote-control",
   "name": "Remote Control",
   "version": "1.0.0",
@@ -241,5 +241,22 @@
         "icon": "network"
       }
     ]
-  }
+  },
+  "pages": [
+    {
+      "id": "remote",
+      "title": {
+        "default": "Remote control"
+      },
+      "icon": "network",
+      "sections": [
+        {
+          "kind": "text",
+          "text": {
+            "default": "Manage this PC's team access and run controller tests in the Remote control page."
+          }
+        }
+      ]
+    }
+  ]
 }

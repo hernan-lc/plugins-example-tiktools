@@ -5,6 +5,7 @@ import {
   accessRow,
   commandView,
   invitationToken,
+  isPending,
   parseReply,
   requestRow,
   rowsOf,
@@ -47,6 +48,7 @@ const inviteToken = ref<string | null>(null);
 
 const commandOperation = ref('automation.list');
 const commandStatus = ref<string | null>(null);
+const commandError = ref<string | null>(null);
 const commandCode = ref<string | null>(null);
 const commandBody = ref<string>('');
 const operations = ['automation.list', 'live.status', 'workflow.list', 'competition.list', 'points.read', 'command.outcome'];
@@ -104,7 +106,7 @@ async function loadTeam() {
     if (!grantsReply.ok) return fail(grantsReply);
     if (!requestsReply.ok) return fail(requestsReply);
     grants.value = rowsOf(grantsReply.value, 'items').map(accessRow).filter((row): row is AccessRow => row !== null);
-    requests.value = rowsOf(requestsReply.value, 'items').map(requestRow).filter((row): row is RequestRow => row !== null);
+    requests.value = rowsOf(requestsReply.value, 'items').map(requestRow).filter((row): row is RequestRow => row !== null).filter(isPending);
   } finally {
     busy.value = false;
   }
@@ -222,9 +224,14 @@ async function runCommand() {
   commandStatus.value = null;
   commandCode.value = null;
   commandBody.value = '';
+  commandError.value = null;
   try {
     const result = await run('tiktools.remote-control.command.run', { hostId: host, operation: commandOperation.value, args: {} });
-    if (!result.ok) return fail(result);
+    if (!result.ok) {
+      // Shown next to the test, not in the page banner, so the answer is where the click was.
+      commandError.value = result.error;
+      return;
+    }
     const outcome = commandView((result.value.outcome ?? {}) as Record<string, unknown>);
     commandStatus.value = outcome.status;
     commandCode.value = outcome.code;
@@ -253,9 +260,25 @@ onMounted(async () => {
 
 <template>
   <main class="remote">
-    <header class="remote__header">
-      <h1>{{ t.title }}</h1>
-      <p class="remote__lede">{{ t.lede }}</p>
+    <header class="remote__top">
+      <div>
+        <h1>{{ t.title }}</h1>
+        <p class="remote__lede">{{ t.lede }}</p>
+      </div>
+      <ul
+        class="chips"
+        :aria-label="t.status"
+      >
+        <li
+          class="chip"
+          :data-state="cloudState"
+        >
+          {{ t.cloud }}: {{ cloudState === 'signed-in' ? t.cloudSignedIn : cloudState === 'signed-out' ? t.cloudSignedOut : t.cloudUnavailable }}
+        </li>
+        <li class="chip">
+          {{ t.linkState }}: {{ link.state || t.cloudUnavailable }}
+        </li>
+      </ul>
     </header>
 
     <p
@@ -274,17 +297,59 @@ onMounted(async () => {
     </p>
 
     <section
-      class="card"
-      aria-labelledby="remote-status"
+      class="toolbar"
+      aria-labelledby="remote-toolbar"
     >
-      <h2 id="remote-status">{{ t.status }}</h2>
-      <dl class="facts">
-        <dt>{{ t.cloud }}</dt>
-        <dd>{{ cloudState === 'signed-in' ? t.cloudSignedIn : cloudState === 'signed-out' ? t.cloudSignedOut : t.cloudUnavailable }}</dd>
-        <dt>{{ t.linkState }}</dt>
-        <dd>{{ link.state || t.cloudUnavailable }}<span v-if="link.lastError"> — {{ link.lastError }}</span></dd>
-      </dl>
-      <div class="row-actions">
+      <h2
+        id="remote-toolbar"
+        class="sr-only"
+      >
+        {{ t.teams }}
+      </h2>
+      <div class="field">
+        <label for="remote-team">{{ t.teams }}</label>
+        <select
+          id="remote-team"
+          class="tk-select"
+          :disabled="!teams.length"
+          :value="selectedTeam ?? ''"
+          @change="selectedTeam = ($event.target as HTMLSelectElement).value || null; loadTeam()"
+        >
+          <option
+            v-if="!teams.length"
+            value=""
+          >
+            {{ t.noTeams }}
+          </option>
+          <option
+            v-for="team in teams"
+            :key="team.id"
+            :value="team.id"
+          >
+            {{ team.name }} · {{ team.status }}
+          </option>
+        </select>
+      </div>
+      <form
+        class="field field--inline"
+        @submit.prevent="createTeam"
+      >
+        <label for="remote-team-name">{{ t.teamName }}</label>
+        <div class="field__row">
+          <input
+            id="remote-team-name"
+            v-model="teamName"
+            maxlength="80"
+          >
+          <button
+            type="submit"
+            :disabled="busy"
+          >
+            {{ t.create }}
+          </button>
+        </div>
+      </form>
+      <div class="toolbar__actions">
         <button
           type="button"
           :disabled="busy"
@@ -302,236 +367,218 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section
-      class="card"
-      aria-labelledby="remote-teams"
-    >
-      <h2 id="remote-teams">{{ t.teams }}</h2>
-      <p
-        v-if="!teams.length"
-        class="hint"
+    <div class="tk-masonry">
+      <section
+        class="card"
+        aria-labelledby="remote-this-pc"
       >
-        {{ t.noTeams }}
-      </p>
-      <ul
-        v-else
-        class="rows"
-      >
-        <li
-          v-for="team in teams"
-          :key="team.id"
-          class="row"
-          :class="{ 'row--selected': selectedTeam === team.id }"
-        >
+        <h2 id="remote-this-pc">{{ t.thisPc }}</h2>
+        <p class="hint">
+          {{ t.enrollHint }}
+        </p>
+        <div class="row-actions">
           <button
             type="button"
-            class="row__select"
-            @click="selectedTeam = team.id; loadTeam()"
+            :disabled="busy || !selectedTeam"
+            @click="enroll('host')"
           >
-            {{ team.name }}
+            {{ t.enrollHost }}
           </button>
-          <span class="row__meta">{{ team.status }}</span>
-        </li>
-      </ul>
-      <form
-        class="inline"
-        @submit.prevent="createTeam"
-      >
-        <label for="remote-team-name">{{ t.teamName }}</label>
-        <input
-          id="remote-team-name"
-          v-model="teamName"
-          maxlength="80"
-        >
-        <button
-          type="submit"
-          :disabled="busy"
-        >
-          {{ t.create }}
-        </button>
-      </form>
-      <form
-        class="inline"
-        @submit.prevent="useTypedHost"
-      >
-        <label for="remote-host-id">{{ t.hostLabel }}</label>
-        <input
-          id="remote-host-id"
-          v-model="hostInput"
-          maxlength="128"
-          autocomplete="off"
-          :placeholder="t.hostPlaceholder"
-        >
-        <button type="submit">
-          {{ t.load }}
-        </button>
-      </form>
-    </section>
-
-    <section
-      class="card"
-      aria-labelledby="remote-this-pc"
-    >
-      <h2 id="remote-this-pc">{{ t.thisPc }}</h2>
-      <div class="row-actions">
-        <button
-          type="button"
-          :disabled="busy || !selectedTeam"
-          @click="enroll('host')"
-        >
-          {{ t.enrollHost }}
-        </button>
-        <button
-          type="button"
-          :disabled="busy"
-          @click="enroll('controller')"
-        >
-          {{ t.enrollController }}
-        </button>
-      </div>
-    </section>
-
-    <section
-      class="card"
-      aria-labelledby="remote-invite"
-    >
-      <h2 id="remote-invite">{{ t.invite }}</h2>
-      <div class="inline">
-        <label for="remote-invite-role">{{ t.inviteRole }}</label>
-        <select
-          id="remote-invite-role"
-          v-model="inviteRole"
-        >
-          <option
-            v-for="role in roles"
-            :key="role.value"
-            :value="role.value"
+          <button
+            type="button"
+            :disabled="busy"
+            @click="enroll('controller')"
           >
-            {{ role.label }}
-          </option>
-        </select>
-        <button
-          type="button"
-          :disabled="busy || !selectedTeam"
-          @click="invite"
-        >
-          {{ t.inviteCreate }}
-        </button>
-      </div>
-      <div
-        v-if="inviteToken"
-        class="token"
-      >
-        <span>{{ t.inviteToken }}</span>
-        <code class="token__value">{{ inviteToken }}</code>
-        <span class="hint">{{ t.inviteOnce }}</span>
-      </div>
-    </section>
+            {{ t.enrollController }}
+          </button>
+        </div>
+      </section>
 
-    <section
-      class="card"
-      aria-labelledby="remote-requests"
-    >
-      <h2 id="remote-requests">{{ t.requests }}</h2>
-      <p
-        v-if="!requests.length"
-        class="hint"
+      <section
+        class="card"
+        aria-labelledby="remote-invite"
       >
-        {{ t.noRequests }}
-      </p>
-      <ul
-        v-else
-        class="rows"
-      >
-        <li
-          v-for="row in requests"
-          :key="row.id"
-          class="row"
-        >
-          <span class="row__label">{{ row.label }}</span>
-          <span class="row__meta">{{ row.role }}</span>
-          <div class="row-actions">
+        <h2 id="remote-invite">{{ t.invite }}</h2>
+        <div class="field">
+          <label for="remote-invite-role">{{ t.inviteRole }}</label>
+          <div class="field__row">
+            <select
+              id="remote-invite-role"
+              class="tk-select"
+              v-model="inviteRole"
+            >
+              <option
+                v-for="role in roles"
+                :key="role.value"
+                :value="role.value"
+              >
+                {{ role.label }}
+              </option>
+            </select>
             <button
               type="button"
-              :disabled="busy"
-              @click="decide(row, 'approve')"
+              :disabled="busy || !selectedTeam"
+              @click="invite"
             >
-              {{ t.approve }}
+              {{ t.inviteCreate }}
             </button>
+          </div>
+        </div>
+        <div
+          v-if="inviteToken"
+          class="token"
+        >
+          <span>{{ t.inviteToken }}</span>
+          <code class="token__value">{{ inviteToken }}</code>
+          <span class="hint">{{ t.inviteOnce }}</span>
+        </div>
+      </section>
+
+      <section
+        class="card"
+        aria-labelledby="remote-requests"
+      >
+        <h2 id="remote-requests">
+          {{ t.requests }}
+          <span
+            v-if="requests.length"
+            class="count"
+          >{{ requests.length }}</span>
+        </h2>
+        <p
+          v-if="!requests.length"
+          class="hint"
+        >
+          {{ t.noRequests }}
+        </p>
+        <ul
+          v-else
+          class="rows"
+        >
+          <li
+            v-for="row in requests"
+            :key="row.id"
+            class="row"
+          >
+            <span class="row__label">{{ row.label }}</span>
+            <span class="row__meta">{{ row.role }}</span>
+            <div class="row-actions">
+              <button
+                type="button"
+                :disabled="busy"
+                @click="decide(row, 'approve')"
+              >
+                {{ t.approve }}
+              </button>
+              <button
+                type="button"
+                class="danger"
+                :disabled="busy"
+                @click="decide(row, 'deny')"
+              >
+                {{ t.deny }}
+              </button>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section
+        class="card"
+        aria-labelledby="remote-access"
+      >
+        <h2 id="remote-access">
+          {{ t.access }}
+          <span
+            v-if="grants.length"
+            class="count"
+          >{{ grants.length }}</span>
+        </h2>
+        <p
+          v-if="!grants.length"
+          class="hint"
+        >
+          {{ t.noAccess }}
+        </p>
+        <ul
+          v-else
+          class="rows"
+        >
+          <li
+            v-for="row in grants"
+            :key="row.id"
+            class="row"
+          >
+            <span class="row__label">{{ row.label }}</span>
+            <span class="row__meta">{{ t.revision }} {{ row.revision ?? '—' }}</span>
             <button
               type="button"
               class="danger"
               :disabled="busy"
-              @click="decide(row, 'deny')"
+              @click="revoke(row)"
             >
-              {{ t.deny }}
+              {{ pendingRevoke === row.id ? t.confirmRevoke : t.revoke }}
             </button>
-          </div>
-        </li>
-      </ul>
-    </section>
+          </li>
+        </ul>
+      </section>
+    </div>
 
-    <section
-      class="card"
-      aria-labelledby="remote-access"
-    >
-      <h2 id="remote-access">{{ t.access }}</h2>
-      <p
-        v-if="!grants.length"
-        class="hint"
+    <details class="advanced">
+      <summary>{{ t.advanced }}</summary>
+
+      <form
+        class="field"
+        @submit.prevent="useTypedHost"
       >
-        {{ t.noAccess }}
-      </p>
-      <ul
-        v-else
-        class="rows"
-      >
-        <li
-          v-for="row in grants"
-          :key="row.id"
-          class="row"
-        >
-          <span class="row__label">{{ row.label }}</span>
-          <span class="row__meta">{{ t.revision }} {{ row.revision ?? '—' }}</span>
+        <label for="remote-host-id">{{ t.hostLabel }}</label>
+        <div class="field__row">
+          <input
+            id="remote-host-id"
+            v-model="hostInput"
+            maxlength="128"
+            autocomplete="off"
+            :placeholder="t.hostPlaceholder"
+          >
+          <button type="submit">
+            {{ t.load }}
+          </button>
+        </div>
+      </form>
+
+      <div class="field">
+        <label for="remote-operation">{{ t.commandOperation }}</label>
+        <div class="field__row">
+          <select
+            id="remote-operation"
+            class="tk-select"
+            v-model="commandOperation"
+          >
+            <option
+              v-for="operation in operations"
+              :key="operation"
+              :value="operation"
+            >
+              {{ operation }}
+            </option>
+          </select>
           <button
             type="button"
-            class="danger"
-            :disabled="busy"
-            @click="revoke(row)"
+            :disabled="busy || !selectedTeam"
+            @click="runCommand"
           >
-            {{ pendingRevoke === row.id ? t.confirmRevoke : t.revoke }}
+            {{ t.commandRun }}
           </button>
-        </li>
-      </ul>
-    </section>
-
-    <section
-      class="card"
-      aria-labelledby="remote-command"
-    >
-      <h2 id="remote-command">{{ t.command }}</h2>
-      <div class="inline">
-        <label for="remote-operation">{{ t.commandOperation }}</label>
-        <select
-          id="remote-operation"
-          v-model="commandOperation"
-        >
-          <option
-            v-for="operation in operations"
-            :key="operation"
-            :value="operation"
-          >
-            {{ operation }}
-          </option>
-        </select>
-        <button
-          type="button"
-          :disabled="busy || !selectedTeam"
-          @click="runCommand"
-        >
-          {{ t.commandRun }}
-        </button>
+        </div>
       </div>
+      <p class="hint">{{ t.commandHint }}</p>
+      <p
+        v-if="commandError"
+        class="alert"
+        role="alert"
+      >
+        {{ commandError }}
+      </p>
       <p
         v-if="commandStatus"
         class="hint"
@@ -542,6 +589,6 @@ onMounted(async () => {
         v-if="commandBody"
         class="result"
       >{{ commandBody }}</pre>
-    </section>
+    </details>
   </main>
 </template>

@@ -85,7 +85,7 @@ onBeforeUnmount(() => { disposed = true; epoch++; clearInterval(timer); });
         </div>
       </template>
       <label class="tts-playback__switch" :title="t(locale, 'ttsTrackPlayback') + ': ' + t(locale, 'ttsPlaybackScope')">
-        <input type="checkbox" :checked="enabled" :aria-label="t(locale, 'ttsTrackPlayback')" :aria-description="t(locale, 'ttsPlaybackScope')" @change="emit('toggle', ($event.target as HTMLInputElement).checked)">
+        <input type="checkbox" role="switch" :checked="enabled" :aria-label="t(locale, 'ttsTrackPlayback')" :aria-description="t(locale, 'ttsPlaybackScope')" @change="emit('toggle', ($event.target as HTMLInputElement).checked)">
         <span aria-hidden="true"/>
       </label>
     </div>

@@ -95,11 +95,16 @@ export const TtsSpecialUsers = defineVueComponent<TtsSpecialUsersProps>(
                 <tr key={entry.handle}>
                   <td>@{entry.handle}</td>
                   <td>
-                    <input
-                      type="checkbox"
-                      aria-label={`${t(locale, 'ttsAllowed')} @${entry.handle}`} title={`${t(locale, 'ttsAllowed')} @${entry.handle}`} checked={entry.allowed}
-                      onChange={(event) => patchSpecialUser(entry.handle, { allowed: (event.currentTarget as HTMLInputElement).checked })}
-                    />
+                    <label class="tk-switch tk-switch--compact">
+                      <input
+                        class="tk-switch__input"
+                        type="checkbox"
+                        role="switch"
+                        aria-label={`${t(locale, 'ttsAllowed')} @${entry.handle}`} title={`${t(locale, 'ttsAllowed')} @${entry.handle}`} checked={entry.allowed}
+                        onChange={(event) => patchSpecialUser(entry.handle, { allowed: (event.currentTarget as HTMLInputElement).checked })}
+                      />
+                      <span class="tk-switch__track" aria-hidden="true"><span class="tk-switch__thumb"></span></span>
+                    </label>
                   </td>
                   <td>
                     <select class="tts-select" aria-label={`${t(locale, 'ttsProvider')} @${entry.handle}`} value={entry.providerId ?? ''}

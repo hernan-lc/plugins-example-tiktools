@@ -92,7 +92,7 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
 
       return (
         <div>
-          <div class="tts-grid tts-grid--top">
+          <div class="tk-masonry">
             <section class="tts-card">
               <h4 class="tts-card__title"><TtsIcon name="voice"/>{t(locale, 'ttsGeneralSettings')}</h4>
               <TtsToggle label={t(locale, 'ttsEnabled')} hint={t(locale, 'ttsEnabled')} checked={settings.enabled} onChange={(checked: boolean) => update({ enabled: checked })}/>

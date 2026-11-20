@@ -59,7 +59,7 @@ export interface AccessRow {
 export function accessRow(row: Record<string, unknown>): AccessRow | null {
   const id = [row.grantId, row.id].find((value): value is string => typeof value === 'string' && value.length > 0);
   if (!id || id.length > 128) return null;
-  const label = [row.principalLabel, row.principal, row.clientLabel, row.label]
+  const label = [row.deviceLabel, row.principalLabel, row.principal, row.clientLabel, row.label]
     .find((value): value is string => typeof value === 'string' && value.length > 0) ?? id;
   const revision = typeof row.revision === 'number' && Number.isSafeInteger(row.revision) ? row.revision : null;
   return { id, label, revision };
@@ -99,6 +99,11 @@ export function requestRow(row: Record<string, unknown>): RequestRow | null {
     role: typeof row.requestedRole === 'string' ? row.requestedRole : '',
     status: typeof row.status === 'string' ? row.status : '',
   };
+}
+
+/** Only requests still waiting for the owner; approved ones already appear as access. */
+export function isPending(row: RequestRow): boolean {
+  return row.status === 'pending';
 }
 
 /** The one-time invitation token, when the host returned a usable one. */
@@ -176,6 +181,9 @@ export interface Strings {
   commandRun: string;
   commandStatus: string;
   commandNoResult: string;
+  commandHint: string;
+  advanced: string;
+  enrollHint: string;
 }
 
 const en: Strings = {
@@ -231,6 +239,9 @@ const en: Strings = {
   commandRun: 'Send through the relay',
   commandStatus: 'Status',
   commandNoResult: 'The host returned no result.',
+  advanced: 'Advanced',
+  enrollHint: 'Enroll this PC as a host to serve the selected team, or as a controller to send test commands.',
+  commandHint: 'This test needs this PC enrolled as a controller on the team. Use “Enroll this PC as a controller” first.',
 };
 
 const es: Strings = {
@@ -286,6 +297,9 @@ const es: Strings = {
   commandRun: 'Enviar por el relay',
   commandStatus: 'Estado',
   commandNoResult: 'El host no devolvió resultado.',
+  advanced: 'Avanzado',
+  enrollHint: 'Enrola este PC como host para servir el equipo seleccionado, o como controlador para enviar pruebas.',
+  commandHint: 'Esta prueba necesita que este PC esté enrolado como controlador del equipo. Usa primero “Enrolar este PC como controlador”.',
 };
 
 /** Spanish for Spanish hosts; English for everything else, as the rest of the app does. */

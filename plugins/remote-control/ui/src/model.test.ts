@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { accessRow, parseReply, rowsOf, validHostId } from './model.ts';
+import { accessRow, isPending, parseReply, requestRow, rowsOf, validHostId } from './model.ts';
 
 describe('remote control view model', () => {
   it('reads the JSON answer from a successful action and reports failures verbatim', () => {
@@ -31,5 +31,16 @@ describe('remote control view model', () => {
     expect(accessRow({ id: 'g2' })).toEqual({ id: 'g2', label: 'g2', revision: null });
     expect(accessRow({ revision: 1 })).toBeNull();
     expect(accessRow({ grantId: 'x'.repeat(129) })).toBeNull();
+  });
+
+  it('labels an access by its device, not by its grant id', () => {
+    expect(accessRow({ id: 'b708', deviceLabel: 'Controlador headless B', revision: 2 })?.label).toBe('Controlador headless B');
+  });
+
+  it('keeps only requests that still await the owner', () => {
+    const pending = requestRow({ id: 'r1', status: 'pending', requestedRole: 'observer' });
+    const approved = requestRow({ id: 'r2', status: 'approved', requestedRole: 'observer' });
+    expect(pending && isPending(pending)).toBe(true);
+    expect(approved && isPending(approved)).toBe(false);
   });
 });

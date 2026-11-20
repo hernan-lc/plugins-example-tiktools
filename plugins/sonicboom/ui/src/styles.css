@@ -3,6 +3,7 @@
  * so variables.css mirrors the app's design tokens and the rest restyles the
  * TTS workspace after the app's panels and controls.
  */
+@import '../../../../vendor/tiktools-plugin-ui/src/kit.css';
 @import './styles/variables.css';
 @import './styles/base.css';
 @import './styles/tts.css';

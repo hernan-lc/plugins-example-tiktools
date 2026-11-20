@@ -58,7 +58,7 @@ test('audio bar stays compact with icon controls and optional details in titles'
   await installFakeBroker(page, state); await page.goto('/');
   const card = page.locator('.tts-playback');
   expect((await card.boundingBox())!.height).toBeLessThan(90);
-  await page.getByRole('checkbox', { name: 'Track audio for playback controls', exact: true }).check();
+  await page.getByRole('switch', { name: 'Track audio for playback controls', exact: true }).check();
   await expect(card).toContainText('12.5 s');
   expect((await card.boundingBox())!.height).toBeLessThan(100);
   await expect(card).not.toContainText('private-queue-reference');
