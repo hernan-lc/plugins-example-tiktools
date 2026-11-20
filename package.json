@@ -5,13 +5,14 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "check": "bun scripts/check.ts",
-    "test": "bun test plugins/sonicboom/shared plugins/sonicboom/ui/src plugins/hotkeys/tests",
-    "typecheck": "vue-tsc --noEmit -p plugins/sonicboom/ui/tsconfig.json && tsc --noEmit -p plugins/hotkeys/tsconfig.json",
+    "test": "bun test plugins/sonicboom/shared plugins/sonicboom/ui/src plugins/remote-control/ui/src plugins/hotkeys/tests",
+    "typecheck": "vue-tsc --noEmit -p plugins/sonicboom/ui/tsconfig.json && vue-tsc --noEmit -p plugins/remote-control/ui/tsconfig.json && tsc --noEmit -p plugins/hotkeys/tsconfig.json",
     "test:local": "bun run check && bun run test && bun run typecheck && bun run e2e:sonicboom && cargo test --workspace --locked",
     "build:sonicboom-ui": "vite build --config plugins/sonicboom/ui/vite.config.ts",
     "build:hotkeys": "tsc -p plugins/hotkeys/tsconfig.json",
     "e2e:sonicboom": "playwright test --config plugins/sonicboom/ui/playwright.config.ts",
-    "sync-sdk": "bun scripts/sync-sdk.ts"
+    "sync-sdk": "bun scripts/sync-sdk.ts",
+    "build:remote-control-ui": "vite build --config plugins/remote-control/ui/vite.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

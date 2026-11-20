@@ -233,10 +233,17 @@
   font-size: var(--font-size-md);
   transition: border-color var(--duration-fast);
 }
-.tts-input,
-.tts-select {
+.tts-input {
   height: var(--control-height-md);
   padding: 0 var(--control-padding-x);
+}
+/* A select grows to fit its text and keeps room for the arrow; a fixed 26px box clipped it. */
+.tts-select {
+  box-sizing: border-box;
+  min-height: 30px;
+  height: auto;
+  padding: 4px 28px 4px var(--control-padding-x);
+  line-height: 1.3;
 }
 .tts-textarea {
   min-height: 72px;

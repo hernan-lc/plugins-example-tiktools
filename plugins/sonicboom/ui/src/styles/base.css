@@ -58,7 +58,7 @@ textarea {
   caret-color: var(--color-text);
 }
 
-select { cursor: pointer; }
+select { cursor: pointer; line-height: 1.3; box-sizing: border-box; }
 
 input:disabled, select:disabled, textarea:disabled {
   color: var(--color-text-disabled);

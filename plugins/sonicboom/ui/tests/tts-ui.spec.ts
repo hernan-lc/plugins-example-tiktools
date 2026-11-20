@@ -309,3 +309,22 @@ test('special users keep independent providers and voices across reloads and gen
   await expect(page.getByLabel('TTS provider @vip',{exact:true})).toHaveValue('qwen3-gguf');
   await expect(page.getByLabel('Voice @vip',{exact:true})).toHaveValue('qwen3-gguf:vip');
 });
+
+test('special-user table renders its selects; the screenshot shows whether their text fits', async ({ page }) => {
+  const state = baseFakeState();
+  state.settings.tts = {
+    enabled: true,
+    defaultVoice: 'M1',
+    specialUsers: [
+      { handle: 'michichileam', allowed: true, voice: 'M1', speed: 1, pitch: 1 },
+      { handle: 'kzinn77xx', allowed: true, voice: 'F5', speed: 1, pitch: 1 },
+    ],
+  };
+  await installFakeBroker(page, state);
+  await page.goto('/');
+  await expect(page.getByText('3 voices')).toBeVisible();
+  await expect(page.locator('table .tts-select').first()).toBeVisible();
+  // Engine-specific clipping (WebKitGTK in the desktop) is not visible in this DOM check,
+  // so the screenshot is the evidence to review by hand.
+  await page.locator('table').first().screenshot({ path: 'test-results/special-user-selects.png' });
+});
