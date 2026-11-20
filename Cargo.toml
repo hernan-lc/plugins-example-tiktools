@@ -8,6 +8,7 @@ members = [
     "plugins/sonora",
     "plugins/sonicboom/backend",
     "plugins/textintel",
+    "crates/tiktools-audio-rodio",
 ]
 resolver = "2"
 

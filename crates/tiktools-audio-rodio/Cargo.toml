@@ -1,0 +1,10 @@
+[package]
+name = "tiktools-audio-rodio"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Rodio playback engine for TikTools hosts: streams a local audio file to the default output with an overlap policy. No TikTools crates."
+publish = false
+
+[dependencies]
+rodio = { version = "0.23.0", features = ["tracing"] }
