@@ -1,0 +1,12 @@
+[package]
+name = "tiktools-remote-control-plugin"
+version = "1.0.0"
+edition = "2021"
+
+[[bin]]
+name = "tiktools-remote-control-plugin"
+path = "src/main.rs"
+
+[dependencies]
+tiktools-plugin-sdk.workspace = true
+serde_json.workspace = true

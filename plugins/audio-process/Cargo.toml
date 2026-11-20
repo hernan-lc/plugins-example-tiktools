@@ -7,3 +7,4 @@ publish = false
 [dependencies]
 serde_json.workspace = true
 tiktools-plugin-sdk.workspace = true
+tiktools-audio-rodio = { path = "../../crates/tiktools-audio-rodio" }

@@ -6,18 +6,24 @@
     windows_subsystem = "windows"
 )]
 
-use serde_json::{Map, Value};
+//! The audio provider plugin. It plays local audio files itself through the
+//! rodio engine, so TikTools links no audio backend. The host routes the
+//! `audio.play` capability here (`capabilityProviders` in plugin.json) and
+//! receives the playback outcome as the structured `result`.
+
+use std::path::Path;
+
+use serde_json::{json, Map, Value};
+use tiktools_audio_rodio::{AudioEngine, Overlap};
 use tiktools_plugin_sdk::prelude::*;
 
 #[derive(Default)]
-struct AudioPlugin;
+struct AudioPlugin {
+    engine: AudioEngine,
+}
 
 impl Plugin for AudioPlugin {
-    fn action(
-        &mut self,
-        _context: &PluginContext,
-        call: ActionCall,
-    ) -> PluginResult<ActionResult> {
+    fn action(&mut self, _context: &PluginContext, call: ActionCall) -> PluginResult<ActionResult> {
         let file_ref = file_reference(call.config())
             .ok_or_else(|| PluginError::invalid_request("audio action has no file reference"))?;
         let file_ref = if let Some(path) = file_ref.as_str() {
@@ -27,19 +33,50 @@ impl Plugin for AudioPlugin {
                 PluginError::invalid_request(format!("invalid audio file reference: {error}"))
             })?
         };
-        let mut intent = AudioPlayIntent::new(file_ref);
-        if let Some(volume) = call.config().get("volume").and_then(number) {
-            intent = intent.volume(volume);
+        let volume = call
+            .config()
+            .get("volume")
+            .and_then(number)
+            .unwrap_or(1.0)
+            .clamp(0.0, 1.0);
+        let overlap = match call.config().get("overlap").and_then(Value::as_str) {
+            Some("restart") => Overlap::Restart,
+            Some("drop") => Overlap::Drop,
+            _ => Overlap::Allow,
+        };
+        let outcome = self
+            .engine
+            .play_file(Path::new(&file_ref.path), volume, overlap)
+            .map_err(|error| PluginError::other(error.to_string()))?;
+        let summary = if outcome.played {
+            format!("played {}", file_ref.name)
+        } else {
+            format!(
+                "skipped {}{}",
+                file_ref.name,
+                outcome
+                    .reason
+                    .map(|reason| format!(" ({reason})"))
+                    .unwrap_or_default()
+            )
+        };
+        let mut action = ActionResult::summary(summary).result(json!({
+            "played": outcome.played,
+            "reason": outcome.reason,
+            "activePlayers": outcome.active_players,
+        }));
+        if outcome.played {
+            action = action.event(PluginEvent::new(
+                "audio.started",
+                json!({
+                    "path": file_ref.path,
+                    "name": file_ref.name,
+                    "volume": volume,
+                    "activePlayers": outcome.active_players,
+                }),
+            )?);
         }
-        if let Some(overlap) = call.config().get("overlap").and_then(Value::as_str) {
-            intent = intent.overlap(match overlap {
-                "restart" => AudioOverlap::Restart,
-                "drop" => AudioOverlap::Drop,
-                _ => AudioOverlap::Allow,
-            });
-        }
-        Ok(ActionResult::summary("requested host audio playback")
-            .intent(HostIntent::audio_play(intent)))
+        Ok(action)
     }
 }
 
