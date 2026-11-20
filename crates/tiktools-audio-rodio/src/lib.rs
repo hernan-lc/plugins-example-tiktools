@@ -74,6 +74,30 @@ impl AudioEngine {
         Self::default()
     }
 
+    /// Plays the file and returns once playback has finished. Hosts may stop the
+    /// process right after a plugin action returns, which would cut the sound short.
+    pub fn play_file_to_completion(
+        &self,
+        path: &Path,
+        volume: f32,
+        overlap: Overlap,
+    ) -> Result<PlaybackOutcome, AudioError> {
+        let outcome = self.play_file(path, volume, overlap)?;
+        if !outcome.played {
+            return Ok(outcome);
+        }
+        loop {
+            let finished = {
+                let state = self.state.lock().map_err(|_| AudioError::Poisoned)?;
+                state.sinks.last().is_none_or(|sink| sink.empty())
+            };
+            if finished {
+                return Ok(outcome);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+
     /// Plays the file at `path` at `volume` (clamped to 0.0..=1.0) under `overlap`.
     pub fn play_file(
         &self,

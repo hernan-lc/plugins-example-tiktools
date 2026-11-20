@@ -54,7 +54,7 @@ impl Plugin for AudioPlugin {
         };
         let outcome = self
             .engine
-            .play_file(Path::new(&file_ref.path), volume, overlap)
+            .play_file_to_completion(Path::new(&file_ref.path), volume, overlap)
             .map_err(|error| PluginError::other(error.to_string()))?;
         let summary = if outcome.played {
             format!("played {}", display_name)
