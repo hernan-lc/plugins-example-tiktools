@@ -98,7 +98,12 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
         </button>
         <span class="tts-pill">{t(locale, 'ttsVoicesCount', { count: props.voices.length })}</span>
       </div>
-      <p class="tts-hint">{t(locale, 'ttsAuthNote')}</p>
+      <details class="tts-auth-note">
+        <summary>
+          <TtsIcon name="info"/>{t(locale, 'ttsAuthNote')}<TtsIcon name="chevron"/>
+        </summary>
+        <p class="tts-hint">{t(locale, 'ttsAuthNoteDetail')}</p>
+      </details>
       <h4 class="tts-card__title"><TtsIcon name="play"/>{t(locale, 'ttsLogs')}</h4>
       {props.logs.length === 0 ? (
         <span class="plg-group-note">{t(locale, 'ttsNothingSpoken')}</span>

@@ -20,6 +20,7 @@ import type { ActionOptionItem } from './types.ts';
 import TtsPlayback from './components/TtsPlayback.vue';
 import TtsIcon from './components/TtsIcon.vue';
 import TtsToggle from './components/TtsToggle.vue';
+import TtsDiagnostics from './components/TtsDiagnostics.vue';
 
 const SPEAK_ACTION = 'sonicboom.server.speak';
 const PROVIDERS_SOURCE = 'plugin-action-options:sonicboom.server.speak:provider';
@@ -427,13 +428,16 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
         onRefreshOutputs={refreshOutputs}
       />
       <details class="tts-card tts-advanced"><summary><TtsIcon name="sliders"/>{t(locale.value, 'ttsAdvanced')}</summary>
-      <details><summary>{t(locale.value, 'ttsDiagnostics')}</summary>
-        <p>{settings.value.providerId} · {ready.value ? t(locale.value, 'ttsReady') : t(locale.value, 'ttsNotReady')} · {settings.value.defaultVoice || '—'}</p>
-        <p>{t(locale.value, 'ttsBackend')}: {String(diagnostic.value.connection ?? '—')} · {t(locale.value, 'ttsQueueDepth')}: {String(diagnostic.value.queueDepth ?? '—')}</p>
-        <p>{String(diagnostic.value.stage ?? '—')} · {String(diagnostic.value.lastResult ?? '—')}</p>
-        <button type="button" onClick={refreshVoices}>{t(locale.value, 'ttsReloadDiagnostics')}</button>
-      </details>
-      <TtsToggle label={t(locale.value, 'ttsManualInterrupt')} hint={t(locale.value, 'ttsManualInterrupt')} checked={manualPlayNow.value} onChange={(checked: boolean) => { manualPlayNow.value = checked; }}/>
+      <TtsDiagnostics
+        locale={locale.value}
+        diagnostic={diagnostic.value}
+        providerId={settings.value.providerId}
+        defaultVoice={settings.value.defaultVoice}
+        ready={ready.value}
+        refreshing={refreshing.value}
+        onRefreshVoices={refreshVoices}
+      />
+      <TtsToggle label={t(locale.value, 'ttsManualInterrupt')} hint={t(locale.value, 'ttsManualInterruptHint')} checked={manualPlayNow.value} onChange={(checked: boolean) => { manualPlayNow.value = checked; }}/>
       </details>
       </div>
     );

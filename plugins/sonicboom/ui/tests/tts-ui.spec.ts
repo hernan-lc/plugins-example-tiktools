@@ -49,6 +49,17 @@ test('voice tester executes speech and renders the log', async ({ page }) => {
   consoleCapture.assertClean();
 });
 
+test('auth hint stays short and reveals the redaction note on demand', async ({ page }) => {
+  await installFakeBroker(page, baseFakeState());
+  await page.goto('/');
+  const hint = page.getByText('401/403? Renew the API token in Connection.', { exact: true });
+  const detail = page.getByText('never its value.', { exact: false });
+  await expect(hint).toBeVisible();
+  await expect(detail).toBeHidden();
+  await hint.click();
+  await expect(detail).toBeVisible();
+});
+
 test('speech failure surfaces in the log without crashing', async ({ page }) => {
   const state = baseFakeState();
   state.speakOutcome = { ok: false, summary: 'synthesis failed', logs: [], error: 'voice not found' };
@@ -271,13 +282,18 @@ test('diagnostics consume host events without refreshing catalogs and manual int
   const before = (await readBrokerCalls(page)).filter(call => call.method === 'options.get').length;
   await expect(page.getByLabel('Interrupt current speech for manual tests')).toBeHidden();
   await page.getByText('Advanced', { exact: true }).click();
-  await page.getByText('Speech diagnostics', { exact: true }).click();
+  await expect(page.getByText('Waiting for speech status from the server…')).toBeVisible();
   await page.evaluate(() => {
     const w = window as unknown as { __SONICBOOM_EMIT_DIAGNOSTIC__: (data: unknown) => void };
-    w.__SONICBOOM_EMIT_DIAGNOSTIC__({pluginId:'sonicboom.server',eventType:'sonicboom.speech-status',event:{stage:'running',connection:'running',queueDepth:3,lastResult:'Playback disposition pending.'}});
+    w.__SONICBOOM_EMIT_DIAGNOSTIC__({pluginId:'sonicboom.server',eventType:'sonicboom.speech-status',event:{stage:'running',connection:'running',queueDepth:3,lastResult:'Playback disposition pending.',counters:{submitted:2,failed:1}}});
   });
-  await expect(page.getByText('Backend: running · Queue depth: 3')).toBeVisible();
-  await expect(page.getByText('running · Playback disposition pending.')).toBeVisible();
+  const summary = page.locator('.tts-diagnostics__summary');
+  await expect(summary).toContainText('running');
+  await expect(summary).toContainText('3');
+  await expect(summary).toContainText('Playback disposition pending.');
+  await page.getByText('Speech counters', { exact: true }).click();
+  await expect(page.locator('.tts-diagnostics__counters')).toContainText('Submitted');
+  await expect(page.locator('.tts-diagnostics__counters')).toContainText('2');
   expect((await readBrokerCalls(page)).filter(call => call.method === 'options.get')).toHaveLength(before);
   await page.getByLabel('Text', { exact: true }).fill('manual check');
   await page.getByRole('button', { name: 'Play', exact: true }).click();

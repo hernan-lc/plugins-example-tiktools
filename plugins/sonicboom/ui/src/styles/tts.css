@@ -157,27 +157,94 @@
 .tts-subgroup > summary > .tts-icon:first-child { color: var(--color-text-muted); }
 .tts-subgroup__body { padding: var(--space-2) var(--space-5) var(--space-5); }
 
-.tts-advanced > details {
+/* ---- Speech diagnostics (host-pushed status, read-only) ---- */
+.tts-diagnostics {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
-.tts-advanced > details > summary {
+.tts-diagnostics__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+.tts-diagnostics__title .tts-icon { color: var(--color-text-muted); }
+.tts-diagnostics__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin: 0;
+}
+.tts-diagnostics__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.tts-diagnostics__item--wide { grid-column: 1 / -1; }
+.tts-diagnostics__item dt {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-  cursor: pointer;
 }
-.tts-advanced > details > button {
-  align-self: flex-start;
-  height: var(--control-height-sm);
-  padding: 0 var(--space-4);
+.tts-diagnostics__item dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  overflow-wrap: anywhere;
+}
+.tts-diagnostics__item dd.tts-diagnostics__mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+.tts-diagnostics__health {
+  height: 18px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-xs);
+  vertical-align: middle;
+}
+.tts-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 var(--space-3);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg-control);
+  background: var(--color-bg-field);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
-  cursor: pointer;
 }
-.tts-advanced > details > button:hover { background: var(--color-bg-control-hover); }
+.tts-status-badge--ok { border-color: color-mix(in srgb, var(--color-success) 55%, transparent); color: var(--color-success); }
+.tts-status-badge--warn { border-color: color-mix(in srgb, var(--color-warning) 55%, transparent); color: var(--color-warning); }
+.tts-status-badge--error { border-color: color-mix(in srgb, var(--color-danger) 55%, transparent); color: var(--color-danger-hover); }
+.tts-diagnostics__counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+.tts-diagnostics__counter {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.tts-diagnostics__counter dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.tts-diagnostics__counter dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---- Rows, labels, text ---- */
 .tts-row {
@@ -216,6 +283,33 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+/* ---- Collapsible auth note: the short fix stays visible, the explanation
+ * (log redaction, token minting) is revealed only when needed ---- */
+.tts-auth-note {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
+}
+.tts-auth-note > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  outline: none;
+}
+.tts-auth-note > summary::-webkit-details-marker { display: none; }
+.tts-auth-note > summary .tts-icon:first-child { color: var(--color-text-muted); }
+.tts-auth-note > summary .tts-icon:last-child {
+  color: var(--color-text-subtle);
+  transition: transform var(--duration-fast);
+}
+.tts-auth-note[open] > summary .tts-icon:last-child { transform: rotate(180deg); }
+.tts-auth-note > summary:hover { color: var(--color-text-muted); }
+.tts-auth-note > summary:focus-visible { box-shadow: inset var(--focus-ring); }
+.tts-auth-note > p { margin-top: var(--space-3); }
 
 /* ---- Fields: mirror BaseTextField / BaseSelect ---- */
 .tts-input,
@@ -416,6 +510,7 @@
 
 @media (max-width: 699px) {
   .tts-workspace-heading { flex-direction: column; gap: var(--space-4); }
+  .tts-diagnostics__summary { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (forced-colors: active) {
@@ -423,5 +518,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tts-disclosure__chevron,
-  .tts-subgroup > summary > .tts-icon:last-child { transition: none; }
+  .tts-subgroup > summary > .tts-icon:last-child,
+  .tts-auth-note > summary .tts-icon:last-child { transition: none; }
 }
