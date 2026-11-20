@@ -14,8 +14,8 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-tiktools-plugin-sdk = { git = "https://github.com/nglmercer/TikTools-app", rev = "ac5614322ddcb4b3ebf99cce6bb5f5fdc5082bc1" }
-tiktools-plugin-api = { git = "https://github.com/nglmercer/TikTools-app", rev = "ac5614322ddcb4b3ebf99cce6bb5f5fdc5082bc1" }
+tiktools-plugin-sdk = { git = "https://github.com/nglmercer/TikTools-app", rev = "5bea2b331a5a565777c41afbaa7fb9a59dbced7e" }
+tiktools-plugin-api = { git = "https://github.com/nglmercer/TikTools-app", rev = "5bea2b331a5a565777c41afbaa7fb9a59dbced7e" }
 serde_json = "1.0.154"
 reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls"] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "macros", "time", "net", "io-util", "io-std", "fs"] }
