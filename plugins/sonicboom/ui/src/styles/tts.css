@@ -7,7 +7,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  max-width: 1280px;
+  width: 100%;
+  max-width: min(100%, 1600px);
+  margin-inline: auto;
 }
 
 /* ---- Page header (app pages use a plain title, no hero) ---- */
@@ -55,11 +57,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   grid-auto-rows: 4px;
+  grid-auto-flow: row dense;
   column-gap: var(--space-5);
   align-items: start;
+  width: 100%;
 }
 .tts-masonry > * { min-width: 0; margin: 0; }
-.tts-masonry__wide { grid-column: 1 / -1; }
+.tts-masonry > [data-masonry-span="all"] { grid-column: 1 / -1; }
 
 /* ---- Panels: header bar + body, like the app's BasePanel ---- */
 .tts-card,
@@ -122,6 +126,20 @@
 .tts-advanced > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
 
 .tts-disclosure__title { flex: 1; min-width: 0; }
+.tts-disclosure__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-raised);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
 .tts-disclosure__chevron {
   margin-left: auto;
   color: var(--color-text-subtle);
@@ -284,9 +302,9 @@
   font-size: var(--font-size-sm);
 }
 
-/* ---- Collapsible auth note: the short fix stays visible, the explanation
- * (log redaction, token minting) is revealed only when needed ---- */
-.tts-auth-note {
+/* ---- Collapsible notes: the short hint stays visible, the explanation is
+ * revealed only when needed (auth redaction, cost policy, …) ---- */
+:is(.tts-note, .tts-auth-note) {
   gap: 0;
   padding: 0;
   border: 0;
@@ -294,7 +312,7 @@
   color: var(--color-text-subtle);
   font-size: var(--font-size-sm);
 }
-.tts-auth-note > .tts-disclosure__trigger {
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__trigger {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -308,10 +326,14 @@
   font-size: inherit;
   font-weight: inherit;
 }
-.tts-auth-note > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
-.tts-auth-note > .tts-disclosure__trigger:hover { color: var(--color-text-muted); }
-.tts-auth-note > .tts-disclosure__trigger:focus-visible { box-shadow: inset var(--focus-ring); }
-.tts-auth-note > .tts-disclosure__body > p { margin-top: var(--space-3); }
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__trigger:hover { color: var(--color-text-muted); }
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__trigger:focus-visible { box-shadow: inset var(--focus-ring); }
+/* Align the expanded text with the trigger label, past its icon. */
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__body {
+  padding-left: calc(var(--icon-size) + var(--space-2));
+}
+:is(.tts-note, .tts-auth-note) > .tts-disclosure__body > p { margin-top: var(--space-3); }
 
 /* ---- Fields: mirror BaseTextField / BaseSelect ---- */
 .tts-input,
@@ -388,32 +410,9 @@
 /* Consecutive radios form one compact list. */
 .tts-check + .tts-check { margin-top: calc(-1 * var(--space-4)); }
 
-/* ---- Switch toggle (kit .tk-switch) with the hint tooltip ---- */
+/* ---- Switch toggle (kit .tk-switch); hints use the native title ---- */
 .tts-toggle { position: relative; }
 .tts-toggle__label { flex: 1; min-width: 0; }
-.tts-toggle__info { width: 14px; height: 14px; color: var(--color-text-subtle); }
-.tts-toggle__hint {
-  position: absolute;
-  z-index: var(--z-tooltip);
-  bottom: calc(100% + var(--space-2));
-  left: 0;
-  width: max-content;
-  max-width: min(300px, 75vw);
-  padding: var(--space-3) var(--space-4);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-overlay);
-  box-shadow: var(--shadow-popup);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-}
-.tts-toggle:hover .tts-toggle__hint,
-.tts-toggle:focus-within .tts-toggle__hint { opacity: 1; visibility: visible; }
-.tts-toggle.is-hint-dismissed .tts-toggle__hint { opacity: 0; visibility: hidden; }
 .tts-toggle.is-disabled { color: var(--color-text-disabled); cursor: default; }
 
 /* Options revealed by a parent toggle. */
@@ -509,6 +508,16 @@
 .tts-preview__result .tts-value { margin-left: 0; color: var(--color-text-subtle); }
 
 .tts-playback code { overflow-wrap: anywhere; }
+/* Output selector lives inside the Audio card instead of taking a masonry slot. */
+.tts-playback__outputs > .tts-card {
+  margin: 0 0 calc(-1 * var(--space-5));
+  padding: var(--space-5);
+  border: 0;
+  border-top: var(--border-width) solid var(--color-border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+.tts-playback__outputs > .tts-card > .tts-card__title { margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) 0; }
 
 @media (max-width: 699px) {
   .tts-workspace-heading { flex-direction: column; gap: var(--space-4); }

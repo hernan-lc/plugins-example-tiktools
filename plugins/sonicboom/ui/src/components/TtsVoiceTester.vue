@@ -102,18 +102,19 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
       <TtsDisclosure class="tts-auth-note" title={t(locale, 'ttsAuthNote')} icon="info">
         <p class="tts-hint">{t(locale, 'ttsAuthNoteDetail')}</p>
       </TtsDisclosure>
-      <h4 class="tts-card__title"><TtsIcon name="play"/>{t(locale, 'ttsLogs')}</h4>
-      {props.logs.length === 0 ? (
-        <span class="plg-group-note">{t(locale, 'ttsNothingSpoken')}</span>
-      ) : (
-        <div class="tts-log" role="log">
-          {props.logs.map((entry) => (
-            <span key={entry.id} class={entry.ok ? 'tts-log__line--ok' : 'tts-log__line--err'}>
-              [{formatTime(entry.at)}] [{entry.source}] {entry.ok ? 'ok' : 'error'} {entry.voice ? `voice=${entry.voice} ` : ''}{entry.summary}
-            </span>
-          ))}
-        </div>
-      )}
+      <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsLogs')} icon="play" badge={props.logs.length} expanded={props.logs.length > 0}>
+        {props.logs.length === 0 ? (
+          <span class="plg-group-note">{t(locale, 'ttsNothingSpoken')}</span>
+        ) : (
+          <div class="tts-log" role="log">
+            {props.logs.map((entry) => (
+              <span key={entry.id} class={entry.ok ? 'tts-log__line--ok' : 'tts-log__line--err'}>
+                [{formatTime(entry.at)}] [{entry.source}] {entry.ok ? 'ok' : 'error'} {entry.voice ? `voice=${entry.voice} ` : ''}{entry.summary}
+              </span>
+            ))}
+          </div>
+        )}
+      </TtsDisclosure>
     </section>
   );
   };

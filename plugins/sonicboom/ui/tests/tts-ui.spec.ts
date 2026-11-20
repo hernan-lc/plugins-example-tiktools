@@ -291,7 +291,7 @@ test('diagnostics consume host events without refreshing catalogs and manual int
   await expect(summary).toContainText('running');
   await expect(summary).toContainText('3');
   await expect(summary).toContainText('Playback disposition pending.');
-  await page.getByText('Speech counters', { exact: true }).click();
+  await page.getByRole('button', { name: /Speech counters/ }).click();
   await expect(page.locator('.tts-diagnostics__counters')).toContainText('Submitted');
   await expect(page.locator('.tts-diagnostics__counters')).toContainText('2');
   expect((await readBrokerCalls(page)).filter(call => call.method === 'options.get')).toHaveLength(before);
@@ -314,6 +314,7 @@ test('special users keep independent providers and voices across reloads and gen
   state.settings.tts = {enabled:true,providerId:'supertonic',defaultVoice:'supertonic:M1',specialUsers:[{handle:'vip',allowed:true,voice:'',speed:1,pitch:1}]};
   await installFakeBroker(page,state); await page.goto('/');
   await expect(page.getByText('3 voices')).toBeVisible();
+  await page.getByRole('button', { name: /Special Users/i }).click();
   await page.getByLabel('TTS provider @vip',{exact:true}).selectOption('qwen3-gguf');
   await expect(page.getByLabel('Voice @vip',{exact:true}).locator('option[value^="supertonic:"]')).toHaveCount(0);
   await page.getByLabel('Voice @vip',{exact:true}).selectOption('qwen3-gguf:vip');
@@ -339,6 +340,7 @@ test('special-user table renders its selects; the screenshot shows whether their
   await installFakeBroker(page, state);
   await page.goto('/');
   await expect(page.getByText('3 voices')).toBeVisible();
+  await page.getByRole('button', { name: /Special Users/i }).click();
   await expect(page.locator('table .tts-select').first()).toBeVisible();
   // Engine-specific clipping (WebKitGTK in the desktop) is not visible in this DOM check,
   // so the screenshot is the evidence to review by hand.

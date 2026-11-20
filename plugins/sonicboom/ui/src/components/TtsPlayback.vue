@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, type VNode } from 'vue';
 import type { PluginBroker } from '@tiktools/plugin-ui';
 import TtsIcon from './TtsIcon.vue';
 import { t, type Locale } from '../i18n/index.ts';
-const props = defineProps<{ broker: PluginBroker; locale: Locale; enabled: boolean; connectionKey: string }>();
+const props = defineProps<{ broker: PluginBroker; locale: Locale; enabled: boolean; connectionKey: string; outputsSlot?: VNode }>();
 const emit = defineEmits<{ toggle: [enabled: boolean] }>();
 type Snapshot = { state: 'pending' | 'ready' | 'error'; observedAt?: number; currentId?: string | null; queueLength?: number; playing?: boolean; paused?: boolean; durationSecs?: number | null; positionSecs?: number | null; error?: string };
 const snapshot = ref<Snapshot | null>(null);
@@ -90,6 +90,7 @@ onBeforeUnmount(() => { disposed = true; epoch++; clearInterval(timer); });
       </label>
     </div>
     <p v-if="enabled && (error || actionError)" role="alert" class="plg-alert">{{ error || actionError }}</p>
+    <div v-if="outputsSlot" class="tts-playback__outputs"><component :is="outputsSlot"/></div>
   </section>
 </template>
 <style scoped>

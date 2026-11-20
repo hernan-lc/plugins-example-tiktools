@@ -12,7 +12,9 @@ const props = withDefaults(defineProps<{
   icon?: string;
   expanded?: boolean;
   chevron?: boolean;
-}>(), { expanded: false, chevron: true });
+  /** Compact count shown in the trigger so collapsed sections still inform. */
+  badge?: string | number;
+}>(), { expanded: false, chevron: true, badge: undefined });
 
 const emit = defineEmits<{ 'update:expanded': [value: boolean] }>();
 const open = ref(props.expanded);
@@ -36,6 +38,7 @@ const toggle = (): void => {
     >
       <TtsIcon v-if="icon" :name="icon" class="tts-disclosure__icon"/>
       <span class="tts-disclosure__title">{{ title }}</span>
+      <span v-if="badge !== undefined" class="tts-disclosure__badge">{{ badge }}</span>
       <TtsIcon v-if="chevron" name="chevron" class="tts-disclosure__chevron"/>
     </button>
     <div v-show="open" :id="bodyId" class="tts-disclosure__body" role="region" :aria-label="title">

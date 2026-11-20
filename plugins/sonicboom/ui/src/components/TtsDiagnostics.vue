@@ -71,7 +71,7 @@ export const TtsDiagnostics = defineVueComponent<TtsDiagnosticsProps>(
           {!data && <p class="tts-hint" role="status">{t(locale, 'ttsDiagnosticsWaiting')}</p>}
 
           {data && data.counters.length > 0 && (
-            <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsDiagnosticsCounters')} icon="sliders">
+            <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsDiagnosticsCounters')} icon="sliders" badge={data.counters.length}>
               <dl class="tts-diagnostics__counters">
                 {data.counters.map(counter => (
                   <div class="tts-diagnostics__counter" key={counter.key}>

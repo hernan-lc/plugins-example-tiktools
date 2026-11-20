@@ -21,6 +21,7 @@ import TtsPlayback from './components/TtsPlayback.vue';
 import TtsIcon from './components/TtsIcon.vue';
 import TtsToggle from './components/TtsToggle.vue';
 import TtsDiagnostics from './components/TtsDiagnostics.vue';
+import TtsOutputsCard from './components/TtsOutputsCard.vue';
 import TtsDisclosure from './components/TtsDisclosure.vue';
 
 const SPEAK_ACTION = 'sonicboom.server.speak';
@@ -403,6 +404,17 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
       <header class="tts-workspace-heading"><div><h2><TtsIcon name="voice"/>{t(locale.value, 'ttsWorkspaceTitle')}</h2><p>{t(locale.value, 'ttsWorkspaceLead')}</p></div><span class={['tts-health', { 'is-ready': ready.value }]}><span/>{t(locale.value, ready.value ? 'ttsReady' : 'ttsNotReady')}</span></header>
       <TtsPlayback broker={broker} locale={locale.value} enabled={settings.value.trackPlayback}
         connectionKey={String(connectionEpoch.value)}
+        outputsSlot={<TtsOutputsCard
+          locale={locale.value}
+          outputsSupported={true}
+          outputs={outputs.value}
+          outputsSelected={outputsSelected.value}
+          outputsError={outputsError.value}
+          outputsPending={outputsPending.value}
+          outputError={outputError.value}
+          onSelectOutput={handleSelectOutput}
+          onRefreshOutputs={refreshOutputs}
+        />}
         onToggle={(trackPlayback: boolean) => handleSettingsChange({ ...settings.value, trackPlayback })}/>
       <TtsSettingsPanel
         locale={locale.value}
@@ -419,14 +431,6 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
         onSettingsChange={handleSettingsChange}
         onRefreshVoices={refreshVoices}
         onSpeak={handleSpeak}
-        outputsSupported={true}
-        outputs={outputs.value}
-        outputsSelected={outputsSelected.value}
-        outputsError={outputsError.value}
-        outputsPending={outputsPending.value}
-        outputError={outputError.value}
-        onSelectOutput={handleSelectOutput}
-        onRefreshOutputs={refreshOutputs}
       />
       <TtsDisclosure class="tts-card tts-advanced" title={t(locale.value, 'ttsAdvanced')} icon="sliders">
       <TtsDiagnostics
