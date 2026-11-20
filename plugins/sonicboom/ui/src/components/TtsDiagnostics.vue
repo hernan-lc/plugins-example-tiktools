@@ -1,5 +1,6 @@
 <script lang="tsx">
 import TtsIcon from './TtsIcon.vue';
+import TtsDisclosure from './TtsDisclosure.vue';
 import { defineVueComponent } from '../vue/component.ts';
 import { t, type Locale } from '../i18n/index.ts';
 import { connectionTone, readDiagnostic } from './diagnostics.ts';
@@ -70,19 +71,16 @@ export const TtsDiagnostics = defineVueComponent<TtsDiagnosticsProps>(
           {!data && <p class="tts-hint" role="status">{t(locale, 'ttsDiagnosticsWaiting')}</p>}
 
           {data && data.counters.length > 0 && (
-            <details class="tts-subgroup">
-              <summary><TtsIcon name="sliders"/>{t(locale, 'ttsDiagnosticsCounters')}<TtsIcon name="chevron"/></summary>
-              <div class="tts-subgroup__body">
-                <dl class="tts-diagnostics__counters">
-                  {data.counters.map(counter => (
-                    <div class="tts-diagnostics__counter" key={counter.key}>
-                      <dt>{t(locale, counter.label)}</dt>
-                      <dd class="tts-diagnostics__mono">{counter.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </details>
+            <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsDiagnosticsCounters')} icon="sliders">
+              <dl class="tts-diagnostics__counters">
+                {data.counters.map(counter => (
+                  <div class="tts-diagnostics__counter" key={counter.key}>
+                    <dt>{t(locale, counter.label)}</dt>
+                    <dd class="tts-diagnostics__mono">{counter.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </TtsDisclosure>
           )}
 
           <div class="tts-row">

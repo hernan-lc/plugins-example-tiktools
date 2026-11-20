@@ -1,6 +1,7 @@
 <script lang="tsx">
 import { ref, watch } from 'vue';
 import TtsIcon from './TtsIcon.vue';
+import TtsDisclosure from './TtsDisclosure.vue';
 import { defineVueComponent } from '../vue/component.ts';
 
 import type { ActionOptionItem } from '../types.ts';
@@ -98,12 +99,9 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
         </button>
         <span class="tts-pill">{t(locale, 'ttsVoicesCount', { count: props.voices.length })}</span>
       </div>
-      <details class="tts-auth-note">
-        <summary>
-          <TtsIcon name="info"/>{t(locale, 'ttsAuthNote')}<TtsIcon name="chevron"/>
-        </summary>
+      <TtsDisclosure class="tts-auth-note" title={t(locale, 'ttsAuthNote')} icon="info">
         <p class="tts-hint">{t(locale, 'ttsAuthNoteDetail')}</p>
-      </details>
+      </TtsDisclosure>
       <h4 class="tts-card__title"><TtsIcon name="play"/>{t(locale, 'ttsLogs')}</h4>
       {props.logs.length === 0 ? (
         <span class="plg-group-note">{t(locale, 'ttsNothingSpoken')}</span>

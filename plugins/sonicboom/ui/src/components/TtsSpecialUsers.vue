@@ -1,6 +1,6 @@
 <script lang="tsx">
 import { ref } from 'vue';
-import TtsGroup from './TtsGroup.vue';
+import TtsDisclosure from './TtsDisclosure.vue';
 import { defineVueComponent } from '../vue/component.ts';
 
 import type { ActionOptionItem } from '../types.ts';
@@ -61,7 +61,7 @@ export const TtsSpecialUsers = defineVueComponent<TtsSpecialUsersProps>(
   const locale = props.locale;
 
   return (
-    <TtsGroup title={t(locale, 'ttsSpecialUsers')} icon="users" expanded={props.settings.specialUsers.length > 0}>
+    <TtsDisclosure title={t(locale, 'ttsSpecialUsers')} icon="users" expanded={props.settings.specialUsers.length > 0}>
       <p class="tts-hint">{t(locale, 'ttsSpecialUsersNote')}</p>
       <div class="tts-add-row">
         <input
@@ -168,7 +168,7 @@ export const TtsSpecialUsers = defineVueComponent<TtsSpecialUsersProps>(
           </table>
         </div>
       )}
-    </TtsGroup>
+    </TtsDisclosure>
   );
   };
   },

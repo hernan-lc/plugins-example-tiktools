@@ -50,14 +50,16 @@
 .tts-health.is-ready { color: var(--color-text); }
 .tts-health.is-ready > span { background: var(--color-success); }
 
-/* ---- Layout ---- */
-.tts-grid {
+/* ---- Layout: measured masonry (see TtsMasonry.vue) ---- */
+.tts-masonry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  grid-auto-rows: 4px;
+  column-gap: var(--space-5);
   align-items: start;
 }
-.tts-grid + .tts-grid { margin-top: var(--space-5); }
+.tts-masonry > * { min-width: 0; margin: 0; }
+.tts-masonry__wide { grid-column: 1 / -1; }
 
 /* ---- Panels: header bar + body, like the app's BasePanel ---- */
 .tts-card,
@@ -72,46 +74,41 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-panel);
 }
-.tts-disclosure:not([open]),
-.tts-advanced:not([open]) { gap: 0; padding-bottom: 0; }
+.tts-disclosure:not(.is-open),
+.tts-advanced:not(.is-open) { gap: 0; padding-bottom: 0; }
 
 .tts-card__title,
-.tts-disclosure > summary,
-.tts-advanced > summary {
+.tts-disclosure > .tts-disclosure__trigger,
+.tts-advanced > .tts-disclosure__trigger {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  width: 100%;
   min-height: var(--control-height-lg);
   margin: 0 calc(-1 * var(--space-5));
   padding: 0 var(--space-5);
+  border: 0;
   background: var(--color-bg-panel-header);
   color: var(--color-text);
+  font: inherit;
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0;
+  text-align: left;
   text-transform: none;
+  cursor: pointer;
+  user-select: none;
 }
 /* A title that opens a later section inside the same card. */
 .tts-card > .tts-card__title:not(:first-child) {
   margin-top: var(--space-2);
   border-top: var(--border-width) solid var(--color-border-subtle);
 }
-.tts-disclosure > summary,
-.tts-advanced > summary,
-.tts-subgroup > summary {
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  outline: none;
-}
-.tts-disclosure > summary::-webkit-details-marker,
-.tts-advanced > summary::-webkit-details-marker,
-.tts-subgroup > summary::-webkit-details-marker { display: none; }
-.tts-disclosure > summary:hover,
-.tts-advanced > summary:hover { background: var(--color-bg-hover); }
-.tts-disclosure > summary:focus-visible,
-.tts-advanced > summary:focus-visible,
-.tts-subgroup > summary:focus-visible { box-shadow: inset var(--focus-ring); }
+.tts-disclosure > .tts-disclosure__trigger:hover,
+.tts-advanced > .tts-disclosure__trigger:hover { background: var(--color-bg-hover); }
+.tts-disclosure > .tts-disclosure__trigger:focus-visible,
+.tts-advanced > .tts-disclosure__trigger:focus-visible,
+.tts-subgroup > .tts-disclosure__trigger:focus-visible { box-shadow: inset var(--focus-ring); }
 
 .tts-icon {
   display: inline-block;
@@ -121,20 +118,20 @@
   vertical-align: middle;
 }
 .tts-card__title > .tts-icon,
-.tts-disclosure > summary > .tts-icon:first-child,
-.tts-advanced > summary > .tts-icon:first-child { color: var(--color-text-muted); }
+.tts-disclosure > .tts-disclosure__trigger > .tts-icon:first-child,
+.tts-advanced > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
 
-.tts-disclosure__chevron,
-.tts-subgroup > summary > .tts-icon:last-child {
+.tts-disclosure__title { flex: 1; min-width: 0; }
+.tts-disclosure__chevron {
   margin-left: auto;
   color: var(--color-text-subtle);
   transition: transform var(--duration-fast);
 }
-.tts-disclosure[open] > summary .tts-disclosure__chevron,
-.tts-subgroup[open] > summary > .tts-icon:last-child { transform: rotate(180deg); }
+.tts-disclosure.is-open > .tts-disclosure__trigger > .tts-disclosure__chevron { transform: rotate(180deg); }
 
 .tts-group__body,
-.tts-subgroup__body {
+.tts-disclosure__body,
+.tts-disclosure > .tts-disclosure__body {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -142,20 +139,23 @@
 
 /* Nested option group, like the app's BaseGroupBox. */
 .tts-subgroup {
+  gap: 0;
+  padding: 0;
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg-panel);
 }
-.tts-subgroup > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
+.tts-subgroup > .tts-disclosure__trigger {
   min-height: var(--control-height-md);
+  margin: 0;
   padding: 0 var(--space-4);
+  background: transparent;
+  font-size: inherit;
   font-weight: var(--font-weight-semibold);
 }
-.tts-subgroup > summary > .tts-icon:first-child { color: var(--color-text-muted); }
-.tts-subgroup__body { padding: var(--space-2) var(--space-5) var(--space-5); }
+.tts-subgroup > .tts-disclosure__trigger:hover { background: var(--color-bg-hover); }
+.tts-subgroup > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
+.tts-subgroup > .tts-disclosure__body { padding: var(--space-2) var(--space-5) var(--space-5); }
 
 /* ---- Speech diagnostics (host-pushed status, read-only) ---- */
 .tts-diagnostics {
@@ -287,29 +287,31 @@
 /* ---- Collapsible auth note: the short fix stays visible, the explanation
  * (log redaction, token minting) is revealed only when needed ---- */
 .tts-auth-note {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-text-subtle);
   font-size: var(--font-size-sm);
 }
-.tts-auth-note > summary {
+.tts-auth-note > .tts-disclosure__trigger {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   width: fit-content;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  outline: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
-.tts-auth-note > summary::-webkit-details-marker { display: none; }
-.tts-auth-note > summary .tts-icon:first-child { color: var(--color-text-muted); }
-.tts-auth-note > summary .tts-icon:last-child {
-  color: var(--color-text-subtle);
-  transition: transform var(--duration-fast);
-}
-.tts-auth-note[open] > summary .tts-icon:last-child { transform: rotate(180deg); }
-.tts-auth-note > summary:hover { color: var(--color-text-muted); }
-.tts-auth-note > summary:focus-visible { box-shadow: inset var(--focus-ring); }
-.tts-auth-note > p { margin-top: var(--space-3); }
+.tts-auth-note > .tts-disclosure__trigger > .tts-icon:first-child { color: var(--color-text-muted); }
+.tts-auth-note > .tts-disclosure__trigger:hover { color: var(--color-text-muted); }
+.tts-auth-note > .tts-disclosure__trigger:focus-visible { box-shadow: inset var(--focus-ring); }
+.tts-auth-note > .tts-disclosure__body > p { margin-top: var(--space-3); }
 
 /* ---- Fields: mirror BaseTextField / BaseSelect ---- */
 .tts-input,
@@ -517,7 +519,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tts-disclosure__chevron,
-  .tts-subgroup > summary > .tts-icon:last-child,
-  .tts-auth-note > summary .tts-icon:last-child { transition: none; }
+  .tts-disclosure__chevron { transition: none; }
 }

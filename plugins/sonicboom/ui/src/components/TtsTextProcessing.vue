@@ -1,6 +1,6 @@
 <script lang="tsx">
 import { ref } from 'vue';
-import TtsGroup from './TtsGroup.vue';
+import TtsDisclosure from './TtsDisclosure.vue';
 import TtsToggle from './TtsToggle.vue';
 import { defineVueComponent } from '../vue/component.ts';
 
@@ -42,7 +42,7 @@ export const TtsTextProcessing = defineVueComponent<TtsTextProcessingProps>(
       const preview = sanitizeTtsText(previewInput.value, sanitizer);
 
       return (
-        <TtsGroup title={t(locale, 'ttsTextProcessing')} icon="sparkle" expanded={false}>
+        <TtsDisclosure title={t(locale, 'ttsTextProcessing')} icon="sparkle" expanded={false}>
           <TtsToggle label={t(locale, 'ttsRemoveEmoteCodes')} hint={t(locale, 'ttsEmoteHint')} checked={sanitizer.removeKnownEmotes} onChange={(checked: boolean) => update({ removeKnownEmotes: checked })}/>
           <TtsToggle label={t(locale, 'ttsRemoveUnicodeEmoji')} hint={t(locale, 'ttsRemoveUnicodeEmoji')} checked={sanitizer.removeUnicodeEmoji} onChange={(checked: boolean) => update({ removeUnicodeEmoji: checked })}/>
           <TtsToggle label={t(locale, 'ttsRemoveInvisibleCharacters')} hint={t(locale, 'ttsRemoveInvisibleCharacters')} checked={sanitizer.removeInvisibleCharacters} onChange={(checked: boolean) => update({ removeInvisibleCharacters: checked })}/>
@@ -77,7 +77,7 @@ export const TtsTextProcessing = defineVueComponent<TtsTextProcessingProps>(
               {preview || t(locale, 'ttsPreviewEmpty')}
             </p>
           </div>
-        </TtsGroup>
+        </TtsDisclosure>
       );
     };
   },

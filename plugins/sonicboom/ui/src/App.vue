@@ -21,6 +21,7 @@ import TtsPlayback from './components/TtsPlayback.vue';
 import TtsIcon from './components/TtsIcon.vue';
 import TtsToggle from './components/TtsToggle.vue';
 import TtsDiagnostics from './components/TtsDiagnostics.vue';
+import TtsDisclosure from './components/TtsDisclosure.vue';
 
 const SPEAK_ACTION = 'sonicboom.server.speak';
 const PROVIDERS_SOURCE = 'plugin-action-options:sonicboom.server.speak:provider';
@@ -427,7 +428,7 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
         onSelectOutput={handleSelectOutput}
         onRefreshOutputs={refreshOutputs}
       />
-      <details class="tts-card tts-advanced"><summary><TtsIcon name="sliders"/>{t(locale.value, 'ttsAdvanced')}</summary>
+      <TtsDisclosure class="tts-card tts-advanced" title={t(locale.value, 'ttsAdvanced')} icon="sliders">
       <TtsDiagnostics
         locale={locale.value}
         diagnostic={diagnostic.value}
@@ -438,7 +439,7 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
         onRefreshVoices={refreshVoices}
       />
       <TtsToggle label={t(locale.value, 'ttsManualInterrupt')} hint={t(locale.value, 'ttsManualInterruptHint')} checked={manualPlayNow.value} onChange={(checked: boolean) => { manualPlayNow.value = checked; }}/>
-      </details>
+      </TtsDisclosure>
       </div>
     );
   };

@@ -18,6 +18,8 @@ import { TtsOutputsCard } from './TtsOutputsCard.vue';
 import { TtsSpecialUsers } from './TtsSpecialUsers.vue';
 import { TtsTextProcessing } from './TtsTextProcessing.vue';
 import { TtsVoiceTester } from './TtsVoiceTester.vue';
+import TtsDisclosure from './TtsDisclosure.vue';
+import TtsMasonry from './TtsMasonry.vue';
 
 type TtsSettingsPanelProps = {
   locale: Locale;
@@ -92,7 +94,7 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
 
       return (
         <div>
-          <div class="tk-masonry">
+          <TtsMasonry>
             <section class="tts-card">
               <h4 class="tts-card__title"><TtsIcon name="voice"/>{t(locale, 'ttsGeneralSettings')}</h4>
               <TtsToggle label={t(locale, 'ttsEnabled')} hint={t(locale, 'ttsEnabled')} checked={settings.enabled} onChange={(checked: boolean) => update({ enabled: checked })}/>
@@ -133,7 +135,7 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
                 </select>
               </div>
               <TtsToggle label={t(locale, 'ttsRandomVoice')} hint={t(locale, 'ttsRandomHint')} checked={settings.randomVoice} onChange={(checked: boolean) => update({ randomVoice: checked })}/>
-              <details class="tts-subgroup" title={t(locale, 'ttsSpeedPitchNote')}><summary><TtsIcon name="sliders"/>{t(locale, 'ttsVoiceAdvanced')}<TtsIcon name="chevron"/></summary><div class="tts-subgroup__body"><div class="tts-row tts-row--stack">
+              <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsVoiceAdvanced')} icon="sliders"><div class="tts-row tts-row--stack">
                 <label class="tts-label" for="tts-speed">
                   {t(locale, 'ttsDefaultSpeed')} <span class="tts-value">{settings.defaultSpeed.toFixed(2)}×</span>
                 </label>
@@ -168,7 +170,7 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
               {TTS_SPEED_PITCH_UNSUPPORTED && (
                 <p class="tts-hint">{t(locale, 'ttsSpeedPitchNote')}</p>
               )}
-              </div></details><div class="tts-row tts-row--stack">
+              </TtsDisclosure><div class="tts-row tts-row--stack">
                 <label class="tts-label" for="tts-volume">
                   {t(locale, 'ttsVolume')} <span class="tts-value">{Math.round(settings.volume * 100)}%</span>
                 </label>
@@ -279,19 +281,17 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
               </div>)}
               <p class="tts-hint">{t(locale, 'ttsCostNote')}</p>
             </section>
-          </div>
 
-          <div class="tts-grid tts-grid--bottom">
-            <TtsSpecialUsers
-              locale={locale}
-              settings={settings}
-              voices={props.allVoices ?? props.voices}
-              providers={props.providers}
-              onSettingsChange={props.onSettingsChange}
-            />
-
-
-          </div>
+            <div class="tts-masonry__wide">
+              <TtsSpecialUsers
+                locale={locale}
+                settings={settings}
+                voices={props.allVoices ?? props.voices}
+                providers={props.providers}
+                onSettingsChange={props.onSettingsChange}
+              />
+            </div>
+          </TtsMasonry>
         </div>
       );
     };
