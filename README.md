@@ -36,6 +36,7 @@ bun run build:sonicboom-ui   # plugins/sonicboom/ui/dist
 cargo test --workspace --locked
 bun run check               # manifest ids / versions / runtimes
 bun run e2e:sonicboom        # compiled UI; install Playwright Chromium first
+bun run test:local           # everything above in one run; no Docker, no external services
 ```
 
 Rust plugins depend only on the public `tiktools-plugin-sdk` / `tiktools-plugin-api`
