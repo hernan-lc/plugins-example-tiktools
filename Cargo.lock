@@ -1903,7 +1903,7 @@ dependencies = [
 [[package]]
 name = "tiktools-plugin-api"
 version = "4.2.3"
-source = "git+https://github.com/nglmercer/TikTools-app?rev=5bea2b331a5a565777c41afbaa7fb9a59dbced7e#5bea2b331a5a565777c41afbaa7fb9a59dbced7e"
+source = "git+https://github.com/nglmercer/TikTools-app?rev=ea60ff10a6eafb64341f851eea2f2933d13df79a#ea60ff10a6eafb64341f851eea2f2933d13df79a"
 dependencies = [
  "schemars",
  "semver",
@@ -1917,12 +1917,12 @@ dependencies = [
 [[package]]
 name = "tiktools-plugin-macros"
 version = "4.2.3"
-source = "git+https://github.com/nglmercer/TikTools-app?rev=5bea2b331a5a565777c41afbaa7fb9a59dbced7e#5bea2b331a5a565777c41afbaa7fb9a59dbced7e"
+source = "git+https://github.com/nglmercer/TikTools-app?rev=ea60ff10a6eafb64341f851eea2f2933d13df79a#ea60ff10a6eafb64341f851eea2f2933d13df79a"
 
 [[package]]
 name = "tiktools-plugin-sdk"
 version = "4.2.3"
-source = "git+https://github.com/nglmercer/TikTools-app?rev=5bea2b331a5a565777c41afbaa7fb9a59dbced7e#5bea2b331a5a565777c41afbaa7fb9a59dbced7e"
+source = "git+https://github.com/nglmercer/TikTools-app?rev=ea60ff10a6eafb64341f851eea2f2933d13df79a#ea60ff10a6eafb64341f851eea2f2933d13df79a"
 dependencies = [
  "serde",
  "serde_json",
@@ -1935,7 +1935,7 @@ dependencies = [
 [[package]]
 name = "tiktools-plugin-store"
 version = "4.2.3"
-source = "git+https://github.com/nglmercer/TikTools-app?rev=5bea2b331a5a565777c41afbaa7fb9a59dbced7e#5bea2b331a5a565777c41afbaa7fb9a59dbced7e"
+source = "git+https://github.com/nglmercer/TikTools-app?rev=ea60ff10a6eafb64341f851eea2f2933d13df79a#ea60ff10a6eafb64341f851eea2f2933d13df79a"
 dependencies = [
  "serde",
  "serde_json",
