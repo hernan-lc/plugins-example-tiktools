@@ -33,6 +33,14 @@ impl Plugin for AudioPlugin {
                 PluginError::invalid_request(format!("invalid audio file reference: {error}"))
             })?
         };
+        let display_name = if file_ref.name.is_empty() {
+            Path::new(&file_ref.path)
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_else(|| file_ref.path.clone())
+        } else {
+            file_ref.name.clone()
+        };
         let volume = call
             .config()
             .get("volume")
@@ -49,11 +57,11 @@ impl Plugin for AudioPlugin {
             .play_file(Path::new(&file_ref.path), volume, overlap)
             .map_err(|error| PluginError::other(error.to_string()))?;
         let summary = if outcome.played {
-            format!("played {}", file_ref.name)
+            format!("played {}", display_name)
         } else {
             format!(
                 "skipped {}{}",
-                file_ref.name,
+                display_name,
                 outcome
                     .reason
                     .map(|reason| format!(" ({reason})"))
@@ -70,7 +78,7 @@ impl Plugin for AudioPlugin {
                 "audio.started",
                 json!({
                     "path": file_ref.path,
-                    "name": file_ref.name,
+                    "name": display_name,
                     "volume": volume,
                     "activePlayers": outcome.active_players,
                 }),
