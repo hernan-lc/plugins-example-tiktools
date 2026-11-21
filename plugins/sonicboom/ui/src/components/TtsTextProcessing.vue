@@ -42,7 +42,7 @@ export const TtsTextProcessing = defineVueComponent<TtsTextProcessingProps>(
       const preview = sanitizeTtsText(previewInput.value, sanitizer);
 
       return (
-        <TtsDisclosure title={t(locale, 'ttsTextProcessing')} icon="sparkle" expanded={false}>
+        <TtsDisclosure title={t(locale, 'ttsTextProcessing')} icon="sparkle" expanded={true} help={t(locale, 'ttsTextProcessingNote')}>
           <TtsToggle label={t(locale, 'ttsRemoveEmoteCodes')} hint={t(locale, 'ttsEmoteHint')} checked={sanitizer.removeKnownEmotes} onChange={(checked: boolean) => update({ removeKnownEmotes: checked })}/>
           <TtsToggle label={t(locale, 'ttsRemoveUnicodeEmoji')} hint={t(locale, 'ttsRemoveUnicodeEmoji')} checked={sanitizer.removeUnicodeEmoji} onChange={(checked: boolean) => update({ removeUnicodeEmoji: checked })}/>
           <TtsToggle label={t(locale, 'ttsRemoveInvisibleCharacters')} hint={t(locale, 'ttsRemoveInvisibleCharacters')} checked={sanitizer.removeInvisibleCharacters} onChange={(checked: boolean) => update({ removeInvisibleCharacters: checked })}/>
@@ -61,7 +61,6 @@ export const TtsTextProcessing = defineVueComponent<TtsTextProcessingProps>(
             </select>
           </div>)}
           <TtsToggle label={t(locale, 'ttsSkipEmptyMessages')} hint={t(locale, 'ttsSkipEmptyMessages')} checked={sanitizer.skipEmptyMessages} onChange={(checked: boolean) => update({ skipEmptyMessages: checked })}/>
-          <p class="tts-hint">{t(locale, 'ttsTextProcessingNote')}</p>
 
           <div class="tts-preview">
             <label class="tts-label" for="tts-preview-input">{t(locale, 'ttsPreviewOriginal')}</label>

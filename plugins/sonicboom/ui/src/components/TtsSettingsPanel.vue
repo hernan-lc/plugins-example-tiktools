@@ -19,6 +19,7 @@ import { TtsTextProcessing } from './TtsTextProcessing.vue';
 import { TtsVoiceTester } from './TtsVoiceTester.vue';
 import TtsDisclosure from './TtsDisclosure.vue';
 import TtsMasonry from './TtsMasonry.vue';
+import TtsInfo from './TtsInfo.vue';
 
 type TtsSettingsPanelProps = {
   locale: Locale;
@@ -29,7 +30,8 @@ type TtsSettingsPanelProps = {
   refreshing?: boolean;
   catalogStatus?: string;
   providerReady?: boolean;
-  voicesError?: string;
+  /** Backend unreachable: only backend-dependent controls are disabled. */
+  offline?: boolean;
   speaking: boolean;
   logs: TtsLogEntry[];
   onSettingsChange: (next: TtsSettings) => void;
@@ -43,7 +45,7 @@ type TtsSettingsPanelProps = {
  * restricted broker (`settings.*`, `actions.*`, `options.*`).
  */
 export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
-  ['allVoices', 'providers', 'refreshing', 'catalogStatus', 'providerReady', 'locale', 'settings', 'voices', 'voicesError', 'speaking', 'logs', 'onSettingsChange', 'onRefreshVoices', 'onSpeak'],
+  ['allVoices', 'providers', 'refreshing', 'catalogStatus', 'providerReady', 'offline', 'locale', 'settings', 'voices', 'speaking', 'logs', 'onSettingsChange', 'onRefreshVoices', 'onSpeak'],
   (props) => {
     const update = (patch: Partial<TtsSettings>): void => {
       props.onSettingsChange({ ...props.settings, ...patch });
@@ -96,15 +98,19 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
                 />
               </div>
               {(props.providers?.length ?? 0) > 1 && <div class="tts-row tts-row--stack">
-                <label class="tts-label" for="tts-provider">{t(locale, 'ttsProvider')}</label>
+                <div class="tts-label-row">
+                  <label class="tts-label" for="tts-provider">{t(locale, 'ttsProvider')}</label>
+                  <TtsInfo text={t(locale, 'ttsProviderHint')}/>
+                </div>
                 <select id="tts-provider" class="tts-select" value={settings.providerId} onChange={event => update({ providerId: (event.currentTarget as HTMLSelectElement).value })}>
                   {!props.providers?.some(p => p.value === settings.providerId) && <option value={settings.providerId} disabled>{settings.providerId} — {t(locale, 'ttsProviderUnavailable')}</option>}
                   {props.providers?.map(p => <option key={p.value} value={p.value} disabled={p.disabled}>{p.label.replace('(loading)', `(${t(locale, 'ttsProviderLoading')})`).replace('(not_installed)', `(${t(locale, 'ttsProviderMissing')})`).replace('(error)', `(${t(locale, 'ttsProviderError')})`)}</option>)}
                 </select>
               </div>}
-              {props.providerReady === false && <p role="status">{t(locale, 'ttsProviderUnavailable')} ({settings.providerId})</p>}
-              {props.catalogStatus && <p role="status">{props.catalogStatus}</p>}
-              {props.voices.length === 0 && <p role="status">{t(locale, 'ttsNoProviderVoices')}</p>}
+              {/* The global connection banner already explains these while offline. */}
+              {!props.offline && props.providerReady === false && <p role="status">{t(locale, 'ttsProviderUnavailable')} ({settings.providerId})</p>}
+              {!props.offline && props.catalogStatus && <p role="status">{props.catalogStatus}</p>}
+              {!props.offline && props.voices.length === 0 && <p role="status">{t(locale, 'ttsNoProviderVoices')}</p>}
               <div class="tts-row tts-row--stack">
                 <label class="tts-label" for="tts-default-voice">{t(locale, 'ttsDefaultVoice')}</label>
                 <select
@@ -153,7 +159,7 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
                 />
               </div>
               {TTS_SPEED_PITCH_UNSUPPORTED && (
-                <p class="tts-hint">{t(locale, 'ttsSpeedPitchNote')}</p>
+                <TtsInfo text={t(locale, 'ttsSpeedPitchNote')}/>
               )}
               </TtsDisclosure><div class="tts-row tts-row--stack">
                 <label class="tts-label" for="tts-volume">
@@ -170,39 +176,20 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
                   onInput={(event) => updateNumber('volume', (event.currentTarget as HTMLInputElement).value)}
                 />
               </div>
-              <TtsDisclosure class="tts-subgroup" title={t(locale, 'ttsChargePoints')} icon="coins">
-                <label class="tts-check" title={t(locale, 'ttsFree')}>
-                  <input type="radio" name="tts-points-mode" checked={!settings.chargePoints} onChange={() => update({ chargePoints: false })} />
-                  {t(locale, 'ttsFree')}
-                </label>
-                <label class="tts-check" title={t(locale, 'ttsChargePerMessage')}>
-                  <input type="radio" name="tts-points-mode" checked={settings.chargePoints} onChange={() => update({ chargePoints: true })} />
-                  {t(locale, 'ttsChargePerMessage')}
-                </label>
-                {settings.chargePoints && (<div class="tts-row tts-row--stack">
-                  <label class="tts-label" for="tts-points-cost">{t(locale, 'ttsPointsCost')}</label>
-                  <input
-                    id="tts-points-cost"
-                    class="tts-input"
-                    type="number"
-                    min={TTS_LIMITS.minPointsCost}
-                    max={TTS_LIMITS.maxPointsCost}
-                    value={settings.pointsCost}
-                    onInput={(event) => updateNumber('pointsCost', (event.currentTarget as HTMLInputElement).value)}
-                  />
-                </div>)}
-                <TtsDisclosure class="tts-note" title={t(locale, 'ttsCostNote')}>
-                  <p class="tts-hint">{t(locale, 'ttsCostNoteDetail')}</p>
-                </TtsDisclosure>
-              </TtsDisclosure>
             </section>
 
+            {/* Tall first: short cards can backfill beneath it in the masonry. */}
+            <TtsTextProcessing
+              locale={locale}
+              settings={settings}
+              onSettingsChange={props.onSettingsChange}
+            />
             <TtsVoiceTester
               refreshing={props.refreshing}
               unavailable={props.providerReady === false || props.voices.length === 0}
+              offline={props.offline}
               locale={locale}
               voices={props.voices}
-              voicesError={props.voicesError}
               speaking={props.speaking}
               logs={props.logs}
               defaultVoice={settings.defaultVoice}
@@ -249,11 +236,32 @@ export const TtsSettingsPanel = defineVueComponent<TtsSettingsPanelProps>(
               {settings.commentMode !== 'any' && <TtsToggle label={t(locale, 'ttsStripCommand')} hint={t(locale, 'ttsStripCommand')} checked={settings.stripCommand} onChange={(checked: boolean) => update({ stripCommand: checked })}/>}
             </section>
 
-            <TtsTextProcessing
-              locale={locale}
-              settings={settings}
-              onSettingsChange={props.onSettingsChange}
-            />
+            <section class="tts-card">
+              <h4 class="tts-card__title"><TtsIcon name="coins"/>{t(locale, 'ttsChargePoints')}</h4>
+              <label class="tts-check" title={t(locale, 'ttsFree')}>
+                <input type="radio" name="tts-points-mode" checked={!settings.chargePoints} onChange={() => update({ chargePoints: false })} />
+                {t(locale, 'ttsFree')}
+              </label>
+              <label class="tts-check" title={t(locale, 'ttsChargePerMessage')}>
+                <input type="radio" name="tts-points-mode" checked={settings.chargePoints} onChange={() => update({ chargePoints: true })} />
+                {t(locale, 'ttsChargePerMessage')}
+              </label>
+              {settings.chargePoints && (<div class="tts-row tts-row--stack">
+                <label class="tts-label" for="tts-points-cost">{t(locale, 'ttsPointsCost')}</label>
+                <input
+                  id="tts-points-cost"
+                  class="tts-input"
+                  type="number"
+                  min={TTS_LIMITS.minPointsCost}
+                  max={TTS_LIMITS.maxPointsCost}
+                  value={settings.pointsCost}
+                  onInput={(event) => updateNumber('pointsCost', (event.currentTarget as HTMLInputElement).value)}
+                />
+              </div>)}
+              <TtsDisclosure class="tts-note" title={t(locale, 'ttsCostNote')}>
+                <p class="tts-hint">{t(locale, 'ttsCostNoteDetail')}</p>
+              </TtsDisclosure>
+            </section>
 
             <div data-masonry-span="all">
               <TtsSpecialUsers

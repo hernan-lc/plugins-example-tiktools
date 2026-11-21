@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import TtsIcon from './TtsIcon.vue';
 import TtsToggle from './TtsToggle.vue';
+import TtsInfo from './TtsInfo.vue';
 import { defineVueComponent } from '../vue/component.ts';
 
 import { t, type Locale } from '../i18n/index.ts';
@@ -57,8 +58,8 @@ export const TtsAllowedUsers = defineVueComponent<TtsAllowedUsersProps>(
   const locale = props.locale;
   return (
     <section class="tts-card">
-      <h4 class="tts-card__title"><TtsIcon name="users"/>{t(locale, 'ttsAllowedUsers')}</h4>
-      <TtsToggle label={t(locale, 'ttsAllUsers')} hint={t(locale, 'ttsAudienceHint')} checked={settings.allowAllUsers} onChange={(checked: boolean) => update({ allowAllUsers: checked })}/>
+      <h4 class="tts-card__title"><TtsIcon name="users"/>{t(locale, 'ttsAllowedUsers')}<TtsInfo text={t(locale, 'ttsRolesNote')}/></h4>
+      <TtsToggle label={t(locale, 'ttsAllUsersSwitch')} hint={t(locale, 'ttsAudienceHint')} checked={settings.allowAllUsers} onChange={(checked: boolean) => update({ allowAllUsers: checked })}/>
       {!settings.allowAllUsers && <div class="tts-dependent-group"><TtsToggle label={t(locale, 'ttsFollowers')} hint={t(locale, 'ttsFollowers')} checked={settings.allowFollowers} onChange={(checked: boolean) => update({ allowFollowers: checked })}/>
       <TtsToggle label={t(locale, 'ttsSubscribers')} hint={t(locale, 'ttsSubscribers')} checked={settings.allowSubscribers} onChange={(checked: boolean) => update({ allowSubscribers: checked })}/>
       <TtsToggle label={t(locale, 'ttsModerators')} hint={t(locale, 'ttsModerators')} checked={settings.allowModerators} onChange={(checked: boolean) => update({ allowModerators: checked })}/>
@@ -90,7 +91,6 @@ export const TtsAllowedUsers = defineVueComponent<TtsAllowedUsersProps>(
           onInput={(event) => updateNumber('topGifterCount', (event.currentTarget as HTMLInputElement).value)}
         />
       </div>)}
-      <p class="tts-hint">{t(locale, 'ttsRolesNote')}</p>
       <TtsToggle label={t(locale, 'ttsAllowedUsersList')} hint={t(locale, 'ttsListHint')} checked={settings.allowListedUsers} onChange={(checked: boolean) => update({ allowListedUsers: checked })}/>
       {settings.allowListedUsers && <div class="tts-dependent-group"><div class="tts-add-row">
         <input
@@ -121,7 +121,6 @@ export const TtsAllowedUsers = defineVueComponent<TtsAllowedUsersProps>(
       )}
       </div>}
       </div>}
-      {settings.allowAllUsers && <p class="tts-hint">{t(locale, 'ttsAudienceHint')}</p>}
     </section>
   );
   };

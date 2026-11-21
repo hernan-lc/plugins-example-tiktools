@@ -182,6 +182,7 @@ test('reload error retains valid choices and remains retryable', async ({ page }
   await expect(page.getByText('3 voices')).toBeVisible();
   await page.evaluate(() => { (window as unknown as { __SONICBOOM_STATE__: { catalogError?: string } }).__SONICBOOM_STATE__.catalogError = 'HTTP 401'; });
   await page.getByRole('button', { name: 'Refresh voices' }).click();
+  await expect(page.getByText('SonicBoom server unreachable')).toBeVisible();
   await expect(page.getByText('Reload failed: HTTP 401')).toBeVisible();
   await expect(page.getByLabel('Default voice')).toHaveValue('supertonic:M1');
   await expect(page.getByRole('button', { name: 'Refresh voices' })).toBeEnabled();

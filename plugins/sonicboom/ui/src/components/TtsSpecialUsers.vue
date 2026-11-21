@@ -61,8 +61,7 @@ export const TtsSpecialUsers = defineVueComponent<TtsSpecialUsersProps>(
   const locale = props.locale;
 
   return (
-    <TtsDisclosure title={t(locale, 'ttsSpecialUsers')} icon="users" badge={props.settings.specialUsers.length} expanded={false}>
-      <p class="tts-hint">{t(locale, 'ttsSpecialUsersNote')}</p>
+    <TtsDisclosure title={t(locale, 'ttsSpecialUsers')} icon="users" badge={props.settings.specialUsers.length} expanded={false} help={t(locale, 'ttsSpecialUsersNote')}>
       <div class="tts-add-row">
         <input
           class="tts-input"

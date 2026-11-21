@@ -23,6 +23,7 @@ import TtsToggle from './components/TtsToggle.vue';
 import TtsDiagnostics from './components/TtsDiagnostics.vue';
 import TtsOutputsCard from './components/TtsOutputsCard.vue';
 import TtsDisclosure from './components/TtsDisclosure.vue';
+import TtsConnectionBanner from './components/TtsConnectionBanner.vue';
 
 const SPEAK_ACTION = 'sonicboom.server.speak';
 const PROVIDERS_SOURCE = 'plugin-action-options:sonicboom.server.speak:provider';
@@ -50,6 +51,10 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
   const catalog = ref<ActionOptionItem[]>([]);
   const voices = computed(() => catalog.value.filter(v => v.value.startsWith(`${settings.value.providerId}:`)));
   const ready = computed(() => providers.value.some(p => p.value === settings.value.providerId && !p.disabled));
+  /** One shared failure surface for every broker call that reaches the backend. */
+  const connectionIssue = computed(() =>
+    [bootError.value, voicesError.value, outputsError.value].find(value => !!value) ?? '',
+  );
   const refreshing = ref(false);
   const connectionEpoch = ref(0);
   const catalogStatus = ref('');
@@ -392,24 +397,35 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
   return () => {
     if (bootError.value && voices.value.length === 0) {
       return (
-        <div class="tts-card">
-          <div class="plg-alert" role="status">
-            {bootError.value}
-          </div>
-        </div>
+        <TtsConnectionBanner locale={locale.value} detail={bootError.value} onRetry={checkConnection}/>
       );
     }
     return (
       <div class="tts-workspace">
       <header class="tts-workspace-heading"><div><h2><TtsIcon name="voice"/>{t(locale.value, 'ttsWorkspaceTitle')}</h2><p>{t(locale.value, 'ttsWorkspaceLead')}</p></div><span class={['tts-health', { 'is-ready': ready.value }]}><span/>{t(locale.value, ready.value ? 'ttsReady' : 'ttsNotReady')}</span></header>
+      {connectionIssue.value && (
+        <TtsConnectionBanner
+          locale={locale.value}
+          detail={connectionIssue.value}
+          retrying={refreshing.value}
+          onRetry={() => { checkConnection(); refreshVoices(); refreshOutputs(); }}
+        />
+      )}
       <TtsPlayback broker={broker} locale={locale.value} enabled={settings.value.trackPlayback}
+        disconnected={!!connectionIssue.value}
         connectionKey={String(connectionEpoch.value)}
+        headerActions={<button type="button" class="plg-btn plg-btn--sm" onClick={refreshOutputs}>
+          <TtsIcon name="refresh"/>{t(locale.value, 'ttsRefreshOutputs')}
+        </button>}
         outputsSlot={<TtsOutputsCard
           locale={locale.value}
           outputsSupported={true}
+          embedded={true}
+          showRefresh={false}
           outputs={outputs.value}
           outputsSelected={outputsSelected.value}
           outputsError={outputsError.value}
+          offline={!!connectionIssue.value}
           outputsPending={outputsPending.value}
           outputError={outputError.value}
           onSelectOutput={handleSelectOutput}
@@ -425,7 +441,7 @@ export const SonicBoomApp = defineVueComponent<Record<string, never>>([], () => 
         catalogStatus={catalogStatus.value}
         refreshing={refreshing.value}
         providerReady={ready.value}
-        voicesError={voicesError.value}
+        offline={!!connectionIssue.value}
         speaking={speaking.value}
         logs={logs.value}
         onSettingsChange={handleSettingsChange}

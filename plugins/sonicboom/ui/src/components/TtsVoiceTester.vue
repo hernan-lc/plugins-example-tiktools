@@ -16,8 +16,9 @@ type TtsVoiceTesterProps = {
   locale: Locale;
   refreshing?: boolean;
   unavailable?: boolean;
+  /** Backend unreachable: block backend-dependent controls, keep text editing. */
+  offline?: boolean;
   voices: ActionOptionItem[];
-  voicesError?: string;
   speaking: boolean;
   logs: TtsLogEntry[];
   defaultVoice: string;
@@ -27,7 +28,7 @@ type TtsVoiceTesterProps = {
 
 /** Voice tester card with spoken-message log. The tester voice follows the default voice until touched. */
 export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
-  ['refreshing', 'unavailable', 'locale', 'voices', 'voicesError', 'speaking', 'logs', 'defaultVoice', 'onSpeak', 'onRefreshVoices'],
+  ['refreshing', 'unavailable', 'offline', 'locale', 'voices', 'speaking', 'logs', 'defaultVoice', 'onSpeak', 'onRefreshVoices'],
   (props) => {
   const testerText = ref('Hello TikTok, this is a voice test.');
   const testerVoice = ref(props.defaultVoice);
@@ -59,14 +60,15 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
   const locale = props.locale;
   return (
     <section class="tts-card">
-      <h4 class="tts-card__title"><TtsIcon name="play"/>{t(locale, 'ttsVoiceTester')}</h4>
-      {props.voicesError && <div class="plg-alert" role="status">{props.voicesError}</div>}
+      <h4 class="tts-card__title"><TtsIcon name="play"/>{t(locale, 'ttsVoiceTester')}<span class="tts-pill">{t(locale, 'ttsVoicesCount', { count: props.voices.length })}</span></h4>
       <div class="tts-row tts-row--stack">
         <label class="tts-label" for="tts-tester-voice">{t(locale, 'ttsVoice')}</label>
         <select
           id="tts-tester-voice"
           class="tts-select"
           value={testerVoice.value}
+          disabled={props.offline}
+          title={props.offline ? t(locale, 'ttsRequiresConnection') : undefined}
           onChange={(event) => { testerVoiceTouched = true; testerVoice.value = (event.currentTarget as HTMLSelectElement).value; }}
         >
           <option value="">{t(locale, 'ttsAutoDefaultVoice')}</option>
@@ -89,7 +91,8 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
         <button
           type="button"
           class="plg-btn plg-btn--primary plg-btn--sm"
-          disabled={props.unavailable || props.speaking || !testerText.value.trim()}
+          disabled={props.offline || props.unavailable || props.speaking || !testerText.value.trim()}
+          title={props.offline ? t(locale, 'ttsRequiresConnection') : undefined}
           onClick={speak}
         >
           <TtsIcon name="play"/>{props.speaking ? t(locale, 'ttsSpeaking') : t(locale, 'ttsPlay')}
@@ -97,7 +100,6 @@ export const TtsVoiceTester = defineVueComponent<TtsVoiceTesterProps>(
         <button type="button" class="plg-btn plg-btn--sm" disabled={props.refreshing} aria-busy={props.refreshing} onClick={props.onRefreshVoices}>
           <TtsIcon name="refresh"/>{t(locale, props.refreshing ? 'ttsReloading' : 'ttsRefreshVoices')}
         </button>
-        <span class="tts-pill">{t(locale, 'ttsVoicesCount', { count: props.voices.length })}</span>
       </div>
       <TtsDisclosure class="tts-auth-note" title={t(locale, 'ttsAuthNote')} icon="info">
         <p class="tts-hint">{t(locale, 'ttsAuthNoteDetail')}</p>

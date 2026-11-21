@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type VNode } from 'vu
 import type { PluginBroker } from '@tiktools/plugin-ui';
 import TtsIcon from './TtsIcon.vue';
 import { t, type Locale } from '../i18n/index.ts';
-const props = defineProps<{ broker: PluginBroker; locale: Locale; enabled: boolean; connectionKey: string; outputsSlot?: VNode }>();
+const props = defineProps<{ broker: PluginBroker; locale: Locale; enabled: boolean; connectionKey: string; outputsSlot?: VNode; headerActions?: VNode; disconnected?: boolean }>();
 const emit = defineEmits<{ toggle: [enabled: boolean] }>();
 type Snapshot = { state: 'pending' | 'ready' | 'error'; observedAt?: number; currentId?: string | null; queueLength?: number; playing?: boolean; paused?: boolean; durationSecs?: number | null; positionSecs?: number | null; error?: string };
 const snapshot = ref<Snapshot | null>(null);
@@ -84,12 +84,14 @@ onBeforeUnmount(() => { disposed = true; epoch++; clearInterval(timer); });
           <button type="button" class="plg-btn plg-btn--sm" :disabled="!canControl || (!current && !snapshot?.queueLength)" :title="t(locale, 'ttsStopAudio')" :aria-label="t(locale, 'ttsStopAudio')" @click="control('stop')"><TtsIcon name="stop"/></button>
         </div>
       </template>
+      <div v-if="headerActions" class="tts-playback__actions"><component :is="headerActions"/></div>
       <label class="tts-playback__switch" :title="t(locale, 'ttsTrackPlayback') + ': ' + t(locale, 'ttsPlaybackScope')">
         <input type="checkbox" role="switch" :checked="enabled" :aria-label="t(locale, 'ttsTrackPlayback')" :aria-description="t(locale, 'ttsPlaybackScope')" @change="emit('toggle', ($event.target as HTMLInputElement).checked)">
         <span aria-hidden="true"/>
       </label>
     </div>
-    <p v-if="enabled && (error || actionError)" role="alert" class="plg-alert">{{ error || actionError }}</p>
+    <!-- The shared connection banner owns backend failures; no duplicate alert here. -->
+    <p v-if="!disconnected && enabled && (error || actionError)" role="alert" class="plg-alert">{{ error || actionError }}</p>
     <div v-if="outputsSlot" class="tts-playback__outputs"><component :is="outputsSlot"/></div>
   </section>
 </template>
@@ -107,8 +109,10 @@ onBeforeUnmount(() => { disposed = true; epoch++; clearInterval(timer); });
 .tts-playback__controls .plg-btn { width: var(--control-height-sm); padding: 0; }
 .tts-playback__controls .tts-icon { width: 14px; height: 14px; }
 /* Mirrors the app's BaseSwitch. */
+.tts-playback__actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
 .tts-playback__switch { position: relative; display: inline-flex; align-items: center; margin-left: auto; cursor: pointer; }
-.tts-playback__controls + .tts-playback__switch { margin-left: 0; }
+.tts-playback__controls + .tts-playback__switch,
+.tts-playback__actions + .tts-playback__switch { margin-left: 0; }
 .tts-playback__switch input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .tts-playback__switch > span { display: inline-flex; align-items: center; width: 32px; height: 18px; padding: 2px; border: var(--border-width) solid var(--color-border-strong); border-radius: 999px; background: var(--color-bg-field); }
 .tts-playback__switch > span::after { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--color-text-muted); transition: transform var(--duration-fast); }
