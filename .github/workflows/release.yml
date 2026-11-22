@@ -1,0 +1,198 @@
+name: Release plugins
+
+# Manual release: builds every plugin as a distributable `.plugin` archive for
+# Linux and Windows (x64) and publishes them to the Releases section.
+#
+# Packaging is owned by TikTools (`bun scripts/task.ts plugins`), which builds
+# each plugin and packs it with `tiktools-plugin-pack`. This workflow checks out
+# TikTools next to this repository, at the same revision `Cargo.toml` pins for
+# the plugin SDK unless `tiktools_ref` says otherwise, and runs it once per
+# platform on a native runner (no cross-compilation).
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create, e.g. v1.0.0 (must not exist yet)'
+        required: true
+        type: string
+      name:
+        description: 'Release title (defaults to the tag)'
+        required: false
+        type: string
+      plugins:
+        description: 'Comma-separated plugin directories or ids to build, e.g. sonicboom,sonora (empty = all)'
+        required: false
+        default: ''
+        type: string
+      tiktools_ref:
+        description: 'TikTools ref to package with (empty = the rev pinned in Cargo.toml)'
+        required: false
+        default: ''
+        type: string
+      prerelease:
+        description: 'Mark the release as a pre-release'
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: 'Create the release as a draft (review before publishing)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  BUN_VERSION: 1.4.4
+  RUSTUP_TOOLCHAIN: 1.99.1
+  TIKTOOLS_REPOSITORY: nglmercer/TikTools-app
+
+jobs:
+  prepare:
+    name: validate inputs
+    runs-on: ubuntu-24.04
+    outputs:
+      tiktools_ref: ${{ steps.resolve.outputs.tiktools_ref }}
+      plugin_args: ${{ steps.resolve.outputs.plugin_args }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Resolve tag, TikTools revision and plugin selection
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          PLUGINS: ${{ inputs.plugins }}
+          TIKTOOLS_REF: ${{ inputs.tiktools_ref }}
+        run: bun scripts/release/cli.ts prepare
+
+  build:
+    name: package (${{ matrix.platform }})
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2025
+            platform: windows-x64
+            msvc_arch: x64
+    env:
+      RELEASE_CLI: ${{ github.workspace }}/plugins-example-tiktools/scripts/release/cli.ts
+      # Sibling checkouts; TikTools resolves the plugin sources from here.
+      TIKTOOLS_PLUGINS_REPO: ${{ github.workspace }}/plugins-example-tiktools
+    steps:
+      - name: Check out plugins
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: plugins-example-tiktools
+
+      - name: Check out TikTools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.TIKTOOLS_REPOSITORY }}
+          ref: ${{ needs.prepare.outputs.tiktools_ref }}
+          path: TikTools-app
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        timeout-minutes: 15
+        run: bun "$RELEASE_CLI" install-linux-deps
+
+      - name: Install Rust
+        run: bun "$RELEASE_CLI" install-rust
+
+      - name: Set up MSVC developer environment
+        if: runner.os == 'Windows'
+        uses: TheMrMilchmann/setup-msvc-dev@368ef7d1ee4d1171b31d4a7f67f4d954f903f5a9 # v4.1.0
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Cache cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            plugins-example-tiktools/target
+            TikTools-app/target
+          key: cargo-release-${{ matrix.platform }}-${{ hashFiles('plugins-example-tiktools/Cargo.lock', 'TikTools-app/Cargo.lock') }}
+          restore-keys: |
+            cargo-release-${{ matrix.platform }}-
+
+      - name: Install plugin dependencies
+        working-directory: plugins-example-tiktools
+        run: bun install --frozen-lockfile
+
+      - name: Install TikTools dependencies
+        working-directory: TikTools-app
+        run: bun ci
+
+      - name: Build and package plugins
+        working-directory: TikTools-app
+        env:
+          PLUGIN_ARGS: ${{ needs.prepare.outputs.plugin_args }}
+          OUT_DIR: ${{ github.workspace }}/out
+        run: bun "$RELEASE_CLI" build-plugins
+
+      - name: Upload archives
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: plugins-${{ matrix.platform }}
+          path: out/*.plugin
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish release
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: plugins-*
+          path: dist
+          # Target-independent (declarative) archives are identical on every
+          # platform and share a file name, so merging keeps a single copy.
+          merge-multiple: true
+
+      - name: Checksum archives and create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TITLE: ${{ inputs.name }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          DRAFT: ${{ inputs.draft }}
+          TIKTOOLS_REF: ${{ needs.prepare.outputs.tiktools_ref }}
+        run: bun scripts/release/cli.ts publish

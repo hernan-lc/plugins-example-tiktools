@@ -5,7 +5,7 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "check": "bun scripts/check.ts",
-    "test": "bun test plugins/sonicboom/shared plugins/sonicboom/ui/src plugins/remote-control/ui/src plugins/hotkeys/tests",
+    "test": "bun test plugins/sonicboom/shared plugins/sonicboom/ui/src plugins/remote-control/ui/src plugins/hotkeys/tests scripts/release",
     "typecheck": "vue-tsc --noEmit -p plugins/sonicboom/ui/tsconfig.json && vue-tsc --noEmit -p plugins/remote-control/ui/tsconfig.json && tsc --noEmit -p plugins/hotkeys/tsconfig.json",
     "test:local": "bun run check && bun run test && bun run typecheck && bun run e2e:sonicboom && cargo test --workspace --locked",
     "build:sonicboom-ui": "vite build --config plugins/sonicboom/ui/vite.config.ts",

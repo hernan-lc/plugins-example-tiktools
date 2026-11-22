@@ -120,6 +120,16 @@ Run host commands such as `bun scripts/task.ts prepare-plugins` in TikTools;
 this repository has its own `package.json` commands and no `scripts/task.ts`.
 Plugin-specific instructions live in each package's README.
 
+## Releases
+
+The **Release plugins** workflow (`.github/workflows/release.yml`) is manual:
+Actions → *Release plugins* → *Run workflow*. It packages every plugin as a
+`.plugin` archive on native Linux and Windows x64 runners with
+TikTools' packager, then publishes them, plus `SHA256SUMS.txt`, to a new GitHub
+release. Inputs: `tag` (required, must not exist), optional `name`, `plugins`
+(for example `sonicboom,sonora`; empty builds all), `tiktools_ref` (defaults to
+the rev pinned in `Cargo.toml`), `prerelease` and `draft`.
+
 ## SonicBoom health strategy
 
 `plugins/sonicboom/plugin.json` keeps `"strategy": "sonicboom"` so it still
