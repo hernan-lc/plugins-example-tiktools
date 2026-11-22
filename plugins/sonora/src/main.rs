@@ -268,7 +268,7 @@ fn strip_bang_token(text: &str) -> &str {
 fn strip_exact_prefix<'a>(text: &'a str, prefix: &str) -> &'a str {
     let mut end = 0usize;
     for (wanted, actual) in prefix.chars().zip(text.chars()) {
-        if wanted.to_ascii_lowercase() != actual.to_ascii_lowercase() {
+        if !wanted.eq_ignore_ascii_case(&actual) {
             return text;
         }
         end += actual.len_utf8();
@@ -359,7 +359,7 @@ fn call_sonora(body: &Value, path: &Path) -> PluginResult<Option<Value>> {
     #[cfg(unix)]
     {
         let request = encode_request(body)?;
-        let stream = UnixStream::connect(&path).map_err(|error| {
+        let stream = UnixStream::connect(path).map_err(|error| {
             PluginError::other(format!(
                 "Cannot connect to Sonora at {} ({}). Is Sonora running?",
                 path.display(),
