@@ -27,11 +27,13 @@ use std::{
 };
 use tiktools_plugin_sdk::prelude::*;
 
+use std::io::{BufRead, BufReader, Read, Write};
 #[cfg(unix)]
-use std::{
-    io::{BufRead, BufReader, Read, Write},
-    os::unix::net::UnixStream,
-};
+use std::os::unix::net::UnixStream;
+
+/// Where Sonora listens on Windows: a named pipe, spoken to like a file.
+#[cfg(windows)]
+const WINDOWS_PIPE: &str = r"\\.\pipe\sonora.sock";
 
 /// Sonora refuses any other protocol version.
 const PROTOCOL_VERSION: u32 = 2;
@@ -332,11 +334,16 @@ fn socket_path_from(
             })?;
         Ok(cache.join("sonora").join("sonora.sock"))
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+        let _ = (runtime_dir, cache_home, home);
+        Ok(PathBuf::from(WINDOWS_PIPE))
+    }
+    #[cfg(not(any(unix, windows)))]
     {
         let _ = (runtime_dir, cache_home, home);
         Err(PluginError::other(
-            "Sonora control currently supports Linux and macOS only",
+            "Sonora control supports Linux, macOS and Windows only",
         ))
     }
 }
@@ -365,32 +372,68 @@ fn call_sonora(body: &Value, path: &Path) -> PluginResult<Option<Value>> {
             .map_err(|error| {
                 PluginError::other(format!("Could not set Sonora socket timeout: {error}"))
             })?;
-        (&stream).write_all(&request).map_err(|error| {
-            PluginError::other(format!("Could not send request to Sonora: {error}"))
-        })?;
-
-        let mut reader = BufReader::new((&stream).take(MAX_REPLY_BYTES as u64 + 1));
-        let mut line = Vec::new();
-        reader.read_until(b'\n', &mut line).map_err(|error| {
-            PluginError::other(format!("Could not read Sonora's reply: {error}"))
-        })?;
-        if line.len() > MAX_REPLY_BYTES {
-            return Err(PluginError::other("Sonora's reply is too large"));
-        }
-        if !line.ends_with(b"\n") {
-            return Err(PluginError::other(
-                "Sonora closed the connection without answering",
-            ));
-        }
-        decode_reply(&line)
+        exchange(&stream, &request)
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+        let request = encode_request(body)?;
+        let path = path.to_path_buf();
+        // A named pipe opened as a file has no read timeout, so the exchange
+        // runs on its own thread and the answer is awaited with a deadline. A
+        // stuck thread ends with this short-lived plugin process.
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let outcome = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(&path)
+                .map_err(|error| {
+                    PluginError::other(format!(
+                        "Cannot connect to Sonora at {} ({}). Is Sonora running?",
+                        path.display(),
+                        error
+                    ))
+                })
+                .and_then(|pipe| exchange(pipe, &request));
+            let _ = sender.send(outcome);
+        });
+        receiver
+            .recv_timeout(ANSWER_TIMEOUT)
+            .map_err(|_| PluginError::other("Sonora did not answer in time"))?
+    }
+    #[cfg(not(any(unix, windows)))]
     {
         let _ = (body, path);
         Err(PluginError::other(
-            "Sonora control currently supports Linux and macOS only",
+            "Sonora control supports Linux, macOS and Windows only",
         ))
     }
+}
+
+/// Write one request line and read the bounded one-line reply, over any
+/// duplex byte stream (a Unix socket or a Windows named pipe).
+fn exchange<S: Read + Write>(mut stream: S, request: &[u8]) -> PluginResult<Option<Value>> {
+    stream.write_all(request).map_err(|error| {
+        PluginError::other(format!("Could not send request to Sonora: {error}"))
+    })?;
+    stream.flush().map_err(|error| {
+        PluginError::other(format!("Could not send request to Sonora: {error}"))
+    })?;
+
+    let mut reader = BufReader::new(stream.take(MAX_REPLY_BYTES as u64 + 1));
+    let mut line = Vec::new();
+    reader.read_until(b'\n', &mut line).map_err(|error| {
+        PluginError::other(format!("Could not read Sonora's reply: {error}"))
+    })?;
+    if line.len() > MAX_REPLY_BYTES {
+        return Err(PluginError::other("Sonora's reply is too large"));
+    }
+    if !line.ends_with(b"\n") {
+        return Err(PluginError::other(
+            "Sonora closed the connection without answering",
+        ));
+    }
+    decode_reply(&line)
 }
 
 fn encode_request(body: &Value) -> PluginResult<Vec<u8>> {
@@ -645,6 +688,58 @@ mod tests {
         );
         assert_eq!(socket_path_from_setting(&json!({"socketPath": ""})), None);
         assert_eq!(socket_path_from_setting(&json!({})), None);
+    }
+
+    /// In-memory duplex stream: reads come from `reply`, writes land in `sent`.
+    struct Duplex {
+        reply: std::io::Cursor<Vec<u8>>,
+        sent: Vec<u8>,
+    }
+
+    impl Read for Duplex {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            self.reply.read(buf)
+        }
+    }
+
+    impl Write for Duplex {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.sent.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn exchange_sends_one_line_and_decodes_the_reply() {
+        let request = encode_request(&json!({"playback": "pause"})).unwrap();
+        let mut stream = Duplex {
+            reply: std::io::Cursor::new(b"{\"v\":2,\"body\":\"done\"}\n".to_vec()),
+            sent: Vec::new(),
+        };
+        assert_eq!(exchange(&mut stream, &request).unwrap(), None);
+        assert_eq!(stream.sent, request);
+    }
+
+    #[test]
+    fn exchange_rejects_a_reply_without_a_newline() {
+        let request = encode_request(&json!({"playback": "play"})).unwrap();
+        let stream = Duplex {
+            reply: std::io::Cursor::new(b"{\"v\":2,\"body\":\"done\"}".to_vec()),
+            sent: Vec::new(),
+        };
+        assert!(exchange(stream, &request).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_default_is_the_sonora_named_pipe() {
+        assert_eq!(
+            socket_path_from(None, None, None).unwrap(),
+            PathBuf::from(r"\\.\pipe\sonora.sock")
+        );
     }
 
     #[cfg(unix)]

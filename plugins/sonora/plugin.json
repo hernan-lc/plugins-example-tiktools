@@ -12,7 +12,7 @@
   "categories": ["music", "integrations"],
   "repository": "https://github.com/nglmercer/plugins-example-tiktools",
   "description": "Control a running Sonora music player through its local control socket: search and play, play, pause, next and previous.",
-  "longDescription": "Control a running Sonora music player through the same local control socket its own CLI uses (protocol 2, JSON lines over a Unix socket).\n\n- **Search and play** resolves a song, album, artist or playlist and plays the best match\n- **Play / Pause / Next / Previous** send one playback command each\n- No host capability is required: the plugin talks to Sonora directly, on Linux and macOS\n- Start Sonora before running an action; if the socket is missing the action reports that Sonora is not running",
+  "longDescription": "Control a running Sonora music player through the same local control socket its own CLI uses (protocol 2, JSON lines over a Unix socket on Linux and macOS, a named pipe on Windows).\n\n- **Search and play** resolves a song, album, artist or playlist and plays the best match\n- **Play / Pause / Next / Previous** send one playback command each\n- No host capability is required: the plugin talks to Sonora directly, on Linux, macOS and Windows\n- Start Sonora before running an action; if the socket is missing the action reports that Sonora is not running",
   "icon": "music",
   "tags": ["sonora", "music", "player", "audio"],
   "runtime": "process",
@@ -28,7 +28,7 @@
         "socketPath": {
           "type": "string",
           "title": "Socket path",
-          "description": "Optional full path to Sonora's control socket. Leave empty to use $XDG_RUNTIME_DIR/sonora.sock with a cache fallback.",
+          "description": "Optional full path to Sonora's control socket. Leave empty to use $XDG_RUNTIME_DIR/sonora.sock with a cache fallback on Linux and macOS, or the named pipe sonora.sock on Windows (\\\\.\\pipe\\sonora.sock).",
           "default": ""
         }
       }
@@ -36,7 +36,7 @@
     "uiHints": {
       "fields": {
         "socketPath": {
-          "placeholder": "/run/user/1000/sonora.sock"
+          "placeholder": "/run/user/1000/sonora.sock or \\\\.\\pipe\\sonora.sock"
         }
       }
     }
