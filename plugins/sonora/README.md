@@ -48,8 +48,10 @@ The socket is discovered in this order:
 Sonora must already be running; otherwise the action reports that the socket
 could not be reached.
 
-Only Unix sockets are supported (Linux and macOS). Sonora's Windows named pipe
-is not implemented yet.
+Linux and macOS use Sonora's Unix socket. On Windows Sonora listens on the named
+pipe `\\.\pipe\sonora.sock`, which is the default there; the **Socket path** setting
+can override it. The same protocol 2 request and reply lines are used on every
+platform.
 
 ## Security
 
