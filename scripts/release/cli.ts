@@ -8,6 +8,7 @@
  *   install-rust        install the pinned Rust toolchain
  *   build-plugins       package plugins with TikTools' packager (cwd: TikTools)
  *   publish             checksum the downloaded archives and create the release
+ *   --help              list the available commands
  */
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -48,6 +49,18 @@ function setOutput(name: string, value: string): void {
 function archives(directory: string): string[] {
   if (!existsSync(directory)) return [];
   return readdirSync(directory).filter((name) => name.endsWith('.plugin')).sort();
+}
+
+function help(): void {
+  console.log(`Usage: bun scripts/release/cli.ts <command>
+
+Commands:
+  prepare             validate inputs, write job outputs
+  install-linux-deps  apt packages the Rust plugins need (Linux only)
+  install-rust        install the pinned Rust toolchain
+  build-plugins       package plugins with TikTools' packager (cwd: TikTools)
+  publish             checksum the downloaded archives and create the release
+  --help              show this help`);
 }
 
 const commands: Record<string, () => void> = {
@@ -123,12 +136,16 @@ const commands: Record<string, () => void> = {
       }),
     );
   },
+
+  '--help': help,
+  '-h': help,
+  help,
 };
 
 const name = process.argv[2] ?? '';
 const command = commands[name];
 if (!command) {
-  console.error(`Unknown command '${name}'. Commands: ${Object.keys(commands).join(', ')}`);
+  console.error(`Unknown command '${name}'. Commands: ${Object.keys(commands).filter((key) => !key.startsWith('-')).join(', ')}`);
   process.exit(2);
 }
 try {

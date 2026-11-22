@@ -114,13 +114,24 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      # Windows `run` steps use PowerShell, where `$RELEASE_CLI` is not an
+      # environment variable reference (that requires `$env:RELEASE_CLI`).
+      # Interpolate the path with an expression instead so the same command
+      # works in bash and pwsh. See also the checks below.
+      - name: Debug release CLI
+        shell: pwsh
+        run: |
+          Write-Host "Working directory: $PWD"
+          Write-Host "Release CLI: ${{ env.RELEASE_CLI }}"
+          bun "${{ env.RELEASE_CLI }}" --help
+
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
         timeout-minutes: 15
-        run: bun "$RELEASE_CLI" install-linux-deps
+        run: bun "${{ env.RELEASE_CLI }}" install-linux-deps
 
       - name: Install Rust
-        run: bun "$RELEASE_CLI" install-rust
+        run: bun "${{ env.RELEASE_CLI }}" install-rust
 
       - name: Set up MSVC developer environment
         if: runner.os == 'Windows'
@@ -153,7 +164,16 @@ jobs:
         env:
           PLUGIN_ARGS: ${{ needs.prepare.outputs.plugin_args }}
           OUT_DIR: ${{ github.workspace }}/out
-        run: bun "$RELEASE_CLI" build-plugins
+        run: bun "${{ env.RELEASE_CLI }}" build-plugins
+
+      - name: Verify plugin artifacts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path "out/*.plugin" -File
+          if (-not $files) {
+            throw "No plugin files were generated in out/"
+          }
+          $files | ForEach-Object { Write-Host "Generated: $($_.FullName)" }
 
       - name: Upload archives
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
